@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded',function(){
-const form=document.getElementById('form'),input=document.getElementById('url'),status=document.getElementById('status'),out=document.getElementById('results'),button=form.querySelector('button');
+const form=document.getElementById('form'),input=document.getElementById('url'),status=document.getElementById('status'),out=document.getElementById('results'),button=document.getElementById('searchSkill');
 function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function front(md,key){const m=md.match(new RegExp('^'+key+':\\s*(.+)$','m'));return m?m[1].replace(/^["']|["']$/g,''):''}
 async function search(){
