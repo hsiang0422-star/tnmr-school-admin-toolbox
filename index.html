@@ -41,7 +41,7 @@
  grid.addEventListener('dragover',e=>{e.preventDefault();const target=e.target.closest('.hubcard');if(!dragged||!target||target===dragged)return;const r=target.getBoundingClientRect();grid.insertBefore(dragged,e.clientY<r.top+r.height/2?target:target.nextSibling)});
  reset.addEventListener('click',()=>{localStorage.removeItem(key);defaults.forEach(title=>{const card=[...grid.children].find(c=>c.querySelector('strong').textContent.trim()===title);if(card)grid.append(card)})});
 })();
-
+</script>
 <script>
 const categories=['全部','會辦回覆','處室知悉與辦理','主管簽核','文書組','事務組','出納組','存查與研習'];
 const rows=[
