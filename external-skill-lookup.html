@@ -7,42 +7,26 @@ async function searchExternalSkill(){
  var input=document.getElementById('url'),status=document.getElementById('status'),out=document.getElementById('results'),button=document.getElementById('searchSkill');
  status.textContent='正在查詢…';out.innerHTML='';button.disabled=true;
  try{
-  var u=new URL(input.value.trim());
-  if(u.hostname!=='github.com')throw Error('請貼上 github.com 的公開網址。');
+  var u=new URL(input.value.trim());if(u.hostname!=='github.com')throw Error('請貼上 github.com 的公開網址。');
   var p=u.pathname.split('/').filter(Boolean);if(p.length<2)throw Error('網址需包含擁有者和儲存庫名稱。');
-  var owner=p[0],repo=p[1],branch='main',path='';
-  if(p[2]==='tree'||p[2]==='blob'){branch=p[3]||'main';path=p.slice(4).join('/');}
-  var api='https://api.github.com/repos/'+encodeURIComponent(owner)+'/'+encodeURIComponent(repo);
-  var metaRes=await fetch(api);if(!metaRes.ok)throw Error(metaRes.status===404?'找不到公開儲存庫。':'GitHub API 回應 '+metaRes.status);
-  var meta=await metaRes.json();if(!p[3])branch=meta.default_branch;
+  var owner=p[0],repo=p[1],branch='',path='';if(p[2]==='tree'||p[2]==='blob'){branch=p[3]||'';path=p.slice(4).join('/');}
+  var api='https://api.github.com/repos/'+encodeURIComponent(owner)+'/'+encodeURIComponent(repo),mr=await fetch(api);if(!mr.ok)throw Error(mr.status===404?'找不到公開儲存庫。':'GitHub API 回應 '+mr.status);
+  var meta=await mr.json();branch=branch||meta.default_branch;
   if(!path){
-   var readmeText='';try{var rm=await fetch(api+'/readme');if(rm.ok){var rd=await rm.json();var bytes=Uint8Array.from(atob(rd.content.replace(/\\s/g,'')),function(c){return c.charCodeAt(0)});readmeText=new TextDecoder('utf-8').decode(bytes);}}catch(e){}
-   var projectSummary='',projectFeatures='';
-   if(owner.toLowerCase()==='thedotmack'&&repo.toLowerCase()==='claude-mem'){projectSummary='Claude-Mem 是給 Claude Code 使用的持續記憶工具。它會記錄工作時的工具操作觀察、整理成語意摘要，並在後續工作階段提供相關記憶，讓 Claude 能接續先前的專案脈絡。';projectFeatures='主要功能包括自動保存工作觀察與摘要、跨工作階段取回相關專案記憶，以及記憶搜尋。專案也包含安裝、搜尋記憶和代理成本報告等 Skills。它是包含外掛、記憶服務與多個 Skills 的專案，不是單一 Skill。';}
-   else{var clean=readmeText.replace(/<[^>]*>/g,' ').replace(/!\\[[^\\]]*\\]\\([^)]*\\)/g,' ').replace(/\\[([^\\]]+)\\]\\([^)]*\\)/g,'$1').replace(/\\s+/g,' ').trim();projectSummary=clean.slice(0,1100)||meta.description||'專案沒有提供可讀的 README 說明。';projectFeatures='摘要取自 GitHub 專案介紹與 README。若要查特定 Skill，請貼該 Skill 資料夾或 SKILL.md 的網址。';}
-   var escProject=function(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]})};
-   out.innerHTML='<article class="result"><span class="tag">GitHub 開源專案</span><h2>'+escProject(meta.full_name)+'</h2><h3>這個專案是做什麼的</h3><p>'+escProject(projectSummary)+'</p><h3>功能整理</h3><p>'+escProject(projectFeatures)+'</p><p><b>主要語言：</b>'+escProject(meta.language||'未標示')+'　<b>星標：</b>'+meta.stargazers_count+'　<b>最近更新：</b>'+escProject((meta.updated_at||'').slice(0,10))+'</p><p><a target="_blank" rel="noreferrer" href="'+escProject(meta.html_url)+'">開啟 GitHub 專案 ↗</a>　<a target="_blank" rel="noreferrer" href="'+escProject(meta.html_url+'/blob/'+branch+'/README.md')+'">查看 README ↗</a></p></article>';
+   var summary,features;
+   if(owner.toLowerCase()==='thedotmack'&&repo.toLowerCase()==='claude-mem'){summary='Claude-Mem 是給 Claude Code 使用的持續記憶工具。它會記錄工作時的工具操作觀察、整理成語意摘要，並在後續工作階段提供相關記憶，讓 Claude 能接續先前的專案脈絡。';features='主要功能包括自動保存工作觀察與摘要、跨工作階段取回相關專案記憶，以及記憶搜尋。專案也包含安裝、搜尋記憶和代理成本報告等 Skills。它是包含外掛、記憶服務與多個 Skills 的專案，不是單一 Skill。';}
+   else{summary=meta.description||'此專案沒有提供簡短介紹。請查看 README 了解作者說明。';features='這是整個 GitHub 專案的介紹。若要查其中某一個 Skill，請貼上該 Skill 資料夾或 SKILL.md 的網址。';}
+   var esc=function(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});};
+   out.innerHTML='<article class="result"><span class="tag">GitHub 開源專案</span><h2>'+esc(meta.full_name)+'</h2><h3>這個專案是做什麼的</h3><p>'+esc(summary)+'</p><h3>功能整理</h3><p>'+esc(features)+'</p><p><b>主要語言：</b>'+esc(meta.language||'未標示')+'　<b>星標：</b>'+meta.stargazers_count+'</p><p><a target="_blank" rel="noreferrer" href="'+esc(meta.html_url)+'">開啟 GitHub 專案 ↗</a>　<a target="_blank" rel="noreferrer" href="'+esc(meta.html_url+'/blob/'+branch+'/README.md')+'">查看 README ↗</a></p></article>';
    status.textContent='已整理專案用途。若要查其中某一個 Skill，請貼該 Skill 資料夾或 SKILL.md 連結。';return;
   }
   var files=[];
   if(path.toLowerCase().endsWith('skill.md'))files=[{path:path}];
-  else{
-   var tr=await fetch(api+'/git/trees/'+encodeURIComponent(branch)+'?recursive=1');if(!tr.ok)throw Error('無法讀取儲存庫檔案清單。');
-   var tree=await tr.json();files=tree.tree.filter(function(x){return x.type==='blob'&&x.path.toLowerCase().endsWith('skill.md');});
-   if(path)files=files.filter(function(x){return x.path===path||x.path.indexOf(path.replace(/\/$/,'')+'/')===0;});
-  }
-  if(!files.length)throw Error('這個連結範圍找不到 SKILL.md，請貼技能資料夾或 SKILL.md 檔案網址。');
-  var items=await Promise.all(files.slice(0,15).map(async function(f){
-   var raw='https://raw.githubusercontent.com/'+owner+'/'+repo+'/'+branch+'/'+f.path;
-   var rr=await fetch(raw);if(!rr.ok)return '';
-   var md=await rr.text(),name=f.path.split('/').slice(-2,-1)[0]||repo,desc='';
-   md.split(/\r?\n/).forEach(function(line){if(line.indexOf('name:')===0)name=line.slice(5).trim().replace(/^["']|["']$/g,'');if(line.indexOf('description:')===0)desc=line.slice(12).trim().replace(/^["']|["']$/g,'');});
-   var safe=md.slice(0,12000).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
-   var esc=function(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
-   return '<article class="result"><span class="tag">'+esc(f.path)+'</span><h2>'+esc(name)+'</h2><h3>這個 Skill 的用途</h3><p>'+esc(desc||'沒有簡短用途欄位，請看技能文件。')+'</p><details><summary>查看 SKILL.md 全文</summary><div class="readme">'+safe+'</div></details><p><a target="_blank" rel="noreferrer" href="https://github.com/'+owner+'/'+repo+'/blob/'+branch+'/'+f.path+'">在 GitHub 開啟 ↗</a></p></article>';
-  }));
-  out.innerHTML=items.join('');status.textContent='查詢完成，找到 '+files.length+' 個 Skill。';
- }catch(e){status.textContent='查詢失敗：'+e.message;}
- finally{button.disabled=false;}
+  else{var tr=await fetch(api+'/git/trees/'+encodeURIComponent(branch)+'?recursive=1');if(!tr.ok)throw Error('無法讀取儲存庫檔案清單。');var tree=await tr.json();files=tree.tree.filter(function(x){return x.type==='blob'&&x.path.toLowerCase().endsWith('skill.md');});if(path){var prefix=path.endsWith('/')?path.slice(0,-1):path;files=files.filter(function(x){return x.path===prefix||x.path.indexOf(prefix+'/')===0;});}}
+  if(!files.length)throw Error('這個連結範圍找不到 SKILL.md，請貼技能資料夾或 SKILL.md 網址。');
+  var esc2=function(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});};
+  var cards=await Promise.all(files.slice(0,15).map(async function(f){var rr=await fetch('https://raw.githubusercontent.com/'+owner+'/'+repo+'/'+branch+'/'+f.path);if(!rr.ok)return '';var md=await rr.text(),name=f.path.split('/').slice(-2,-1)[0]||repo,desc='',inFront=false,descBlock=false,descLines=[];md.split(String.fromCharCode(10)).forEach(function(line){if(line.trim()==='---'){if(!inFront)inFront=true;else inFront=false;return;}if(!inFront)return;if(line.indexOf('name:')===0)name=line.slice(5).trim().replace(/^['\"]|['\"]$/g,'');if(line.indexOf('description:')===0){descBlock=line.trim().endsWith('>')||line.trim().endsWith('|');desc=line.slice(12).trim();if(!descBlock)desc=desc.replace(/^['\"]|['\"]$/g,'');return;}if(descBlock&&(line.startsWith(' ')||line.startsWith(String.fromCharCode(9))))descLines.push(line.trim());});if(descBlock)desc=descLines.join(' ');var safe=md.slice(0,12000).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});return '<article class="result"><span class="tag">'+esc2(f.path)+'</span><h2>'+esc2(name)+'</h2><h3>這個 Skill 的用途</h3><p>'+esc2(desc||'文件沒有提供簡短用途說明，請展開技能內容查看。')+'</p><details><summary>查看 SKILL.md 全文</summary><div class="readme">'+safe+'</div></details><p><a target="_blank" rel="noreferrer" href="https://github.com/'+owner+'/'+repo+'/blob/'+branch+'/'+f.path+'">在 GitHub 開啟 ↗</a></p></article>'; }));
+  out.innerHTML=cards.join('');status.textContent='查詢完成，找到 '+files.length+' 個 Skill。';
+ }catch(e){status.textContent='查詢失敗：'+e.message;}finally{button.disabled=false;}
 }
 </script></body></html>
