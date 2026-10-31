@@ -18,7 +18,8 @@ async function searchExternalSkill(){
    if(owner.toLowerCase()==='thedotmack'&&repo.toLowerCase()==='claude-mem'){summary='Claude-Mem 是給 Claude Code 使用的持續記憶工具。它會記錄工作時的工具操作觀察、整理成語意摘要，並在後續工作階段提供相關記憶，讓 Claude 能接續先前的專案脈絡。';features='主要功能包括自動保存工作觀察與摘要、跨工作階段取回相關專案記憶，以及記憶搜尋。專案也包含安裝、搜尋記憶和代理成本報告等 Skills。它是包含外掛、記憶服務與多個 Skills 的專案，不是單一 Skill。';}
    else if(owner.toLowerCase()==='obra'&&repo.toLowerCase()==='superpowers'){summary='Superpowers 是一套給 AI 程式代理使用的軟體開發方法與 Skills。它先協助釐清需求、討論設計並產生實作計畫，再依測試驅動開發完成工作，並使用子代理分工、程式碼審查與除錯流程。';features='它是一組可組合的開發工作流程，包含腦力激盪、撰寫計畫、測試驅動開發、系統化除錯、子代理開發、程式碼審查與 Git worktree 等 Skills；README 列出 Claude Code、Codex、Cursor 等安裝方式。'}
    else{summary=meta.description||'此專案沒有提供簡短介紹。請查看 README 了解作者說明。';features='這是整個 GitHub 專案的介紹。若要查其中某一個 Skill，請貼上該 Skill 資料夾或 SKILL.md 的網址。';}
-   summary=await translateZh(summary);features=await translateZh(features);\n   var esc=function(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});};
+   summary=await translateZh(summary);features=await translateZh(features);
+   var esc=function(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});};
    out.innerHTML='<article class="result"><span class="tag">GitHub 開源專案</span><h2>'+esc(meta.full_name)+'</h2><h3>這個專案是做什麼的</h3><p>'+esc(summary)+'</p><h3>功能整理</h3><p>'+esc(features)+'</p><p><b>主要語言：</b>'+esc(meta.language||'未標示')+'　<b>星標：</b>'+meta.stargazers_count+'</p><p><a target="_blank" rel="noreferrer" href="'+esc(meta.html_url)+'">開啟 GitHub 專案 ↗</a>　<a target="_blank" rel="noreferrer" href="'+esc(meta.html_url+'/blob/'+branch+'/README.md')+'">查看 README ↗</a></p></article>';
    status.textContent='已整理專案用途。若要查其中某一個 Skill，請貼該 Skill 資料夾或 SKILL.md 連結。';return;
   }
