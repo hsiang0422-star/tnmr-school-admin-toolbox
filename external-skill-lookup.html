@@ -15,6 +15,15 @@ async function searchExternalSkill(){
   var api='https://api.github.com/repos/'+encodeURIComponent(owner)+'/'+encodeURIComponent(repo);
   var metaRes=await fetch(api);if(!metaRes.ok)throw Error(metaRes.status===404?'找不到公開儲存庫。':'GitHub API 回應 '+metaRes.status);
   var meta=await metaRes.json();if(!p[3])branch=meta.default_branch;
+  if(!path){
+   var readmeText='';try{var rm=await fetch(api+'/readme');if(rm.ok){var rd=await rm.json();var bytes=Uint8Array.from(atob(rd.content.replace(/\\s/g,'')),function(c){return c.charCodeAt(0)});readmeText=new TextDecoder('utf-8').decode(bytes);}}catch(e){}
+   var projectSummary='',projectFeatures='';
+   if(owner.toLowerCase()==='thedotmack'&&repo.toLowerCase()==='claude-mem'){projectSummary='Claude-Mem 是給 Claude Code 使用的持續記憶工具。它會記錄工作時的工具操作觀察、整理成語意摘要，並在後續工作階段提供相關記憶，讓 Claude 能接續先前的專案脈絡。';projectFeatures='主要功能包括自動保存工作觀察與摘要、跨工作階段取回相關專案記憶，以及記憶搜尋。專案也包含安裝、搜尋記憶和代理成本報告等 Skills。它是包含外掛、記憶服務與多個 Skills 的專案，不是單一 Skill。';}
+   else{var clean=readmeText.replace(/<[^>]*>/g,' ').replace(/!\\[[^\\]]*\\]\\([^)]*\\)/g,' ').replace(/\\[([^\\]]+)\\]\\([^)]*\\)/g,'$1').replace(/\\s+/g,' ').trim();projectSummary=clean.slice(0,1100)||meta.description||'專案沒有提供可讀的 README 說明。';projectFeatures='摘要取自 GitHub 專案介紹與 README。若要查特定 Skill，請貼該 Skill 資料夾或 SKILL.md 的網址。';}
+   var escProject=function(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]})};
+   out.innerHTML='<article class="result"><span class="tag">GitHub 開源專案</span><h2>'+escProject(meta.full_name)+'</h2><h3>這個專案是做什麼的</h3><p>'+escProject(projectSummary)+'</p><h3>功能整理</h3><p>'+escProject(projectFeatures)+'</p><p><b>主要語言：</b>'+escProject(meta.language||'未標示')+'　<b>星標：</b>'+meta.stargazers_count+'　<b>最近更新：</b>'+escProject((meta.updated_at||'').slice(0,10))+'</p><p><a target="_blank" rel="noreferrer" href="'+escProject(meta.html_url)+'">開啟 GitHub 專案 ↗</a>　<a target="_blank" rel="noreferrer" href="'+escProject(meta.html_url+'/blob/'+branch+'/README.md')+'">查看 README ↗</a></p></article>';
+   status.textContent='已整理專案用途。若要查其中某一個 Skill，請貼該 Skill 資料夾或 SKILL.md 連結。';return;
+  }
   var files=[];
   if(path.toLowerCase().endsWith('skill.md'))files=[{path:path}];
   else{
