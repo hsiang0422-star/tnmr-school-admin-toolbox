@@ -1,0 +1,52 @@
+name: Sync Claude skills
+
+on:
+  repository_dispatch:
+    types: [claude-skills-updated]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-skill-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out toolbox
+        uses: actions/checkout@v4
+
+      - name: Update Hallmark catalog entry
+        env:
+          SOURCE_REPO: hsiang0422-star/claude-skills
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          repo = os.environ['SOURCE_REPO']
+          url = f'https://api.github.com/repos/{repo}/contents'
+          req = urllib.request.Request(url, headers={'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req) as response:
+              root = json.load(response)
+          skills = [item for item in root if item['type'] == 'dir']
+          path = 'skills.html'
+          html = open(path, encoding='utf-8').read()
+          start = html.find('const claudeSkills = ')
+          end = html.find(';', start)
+          if start < 0 or end < 0:
+              raise SystemExit('Could not find claudeSkills data marker')
+          entries = []
+          for item in skills:
+              name = item['name']
+              skill_url = f"https://github.com/{repo}/tree/main/{name}"
+              entries.append({'id': f'claude:{name}', 'name': name, 'url': skill_url})
+          replacement = 'const claudeSkills = ' + json.dumps(entries, ensure_ascii=False) + html[end:]
+          html = html[:start] + replacement
+          open(path, 'w', encoding='utf-8').write(html)
+          PY
+
+      - name: Commit updated catalog
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add skills.html
+          git diff --cached --quiet || git commit -m "Sync Claude skills catalog"
+          git push
