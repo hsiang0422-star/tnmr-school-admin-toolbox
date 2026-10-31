@@ -4,7 +4,7 @@
 </head><body><main class="shell"><section class="box"><span class="eyebrow">南特行政工具箱｜外部技能探索</span><h1>查詢網路上找到的 GitHub Skill</h1><p>貼上外部 GitHub 專案、資料夾或 SKILL.md 連結。頁面會搜尋專案中的 SKILL.md，整理技能名稱、用途說明與原始文件，協助判斷這個 Skill 是做什麼的。</p><nav class="links"><a href="./">返回行政工具箱</a><a href="github-skills.html">搜尋我的 Skill 庫</a></nav><form class="form" id="form"><input id="url" type="url" required placeholder="https://github.com/owner/repo/tree/main/path-to-skill"><button class="go" type="button" id="searchSkill" onclick="searchExternalSkill()">查詢外部 Skill</button></form><div class="status" id="status" role="status">支援公開 GitHub 專案或 SKILL.md 連結。</div><div id="results"></div></section><footer>讀取公開 GitHub 內容；英文用途說明會嘗試翻譯為繁體中文。翻譯服務不可用時顯示原文。頁面不會安裝或執行 Skill。</footer></main>
 <script>
 async function copyExplanation(button){
- var card=button.closest('.result'),parts=Array.from(card.querySelectorAll('h2,h3,p')).map(function(node){return node.innerText.trim();}).filter(Boolean),text=parts.join('\\n\\n');
+ var card=button.closest('.result'),parts=Array.from(card.querySelectorAll('h2,h3,p')).map(function(node){return node.innerText.trim();}).filter(Boolean),text=parts.join(String.fromCharCode(10)+String.fromCharCode(10));
  try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);}else{throw Error('clipboard unavailable');}}
  catch(e){var area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();var copied=document.execCommand('copy');area.remove();if(!copied){document.getElementById('status').textContent='無法自動複製，請手動選取說明文字。';return;}}
  var old=button.textContent;button.textContent='已複製，可貼到 Google 翻譯';button.disabled=true;setTimeout(function(){button.textContent=old;button.disabled=false;},2200);
@@ -20,14 +20,14 @@ async function searchExternalSkill(){
   var meta=await mr.json();branch=branch||meta.default_branch;
   async function translateZh(text){if(!text||/[\u3400-\u9fff]/.test(text))return text;try{var chunks=[];for(var i=0;i<text.length;i+=350)chunks.push(text.slice(i,i+350));var translated=[];for(var chunk of chunks){var params=new URLSearchParams({q:chunk,langpair:'en|zh-TW'});var res=await fetch('https://api.mymemory.translated.net/get?'+params.toString());if(!res.ok)throw Error('translation unavailable');var data=await res.json();if(Number(data.responseStatus)!==200)throw Error('translation unavailable');translated.push(data.responseData.translatedText);}return translated.join('');}catch(e){return text;}}
   if(!path){
-   var summary,features;
-   if(owner.toLowerCase()==='thedotmack'&&repo.toLowerCase()==='claude-mem'){summary='Claude-Mem 是給 Claude Code 使用的持續記憶工具。它會記錄工作時的工具操作觀察、整理成語意摘要，並在後續工作階段提供相關記憶，讓 Claude 能接續先前的專案脈絡。';features='主要功能包括自動保存工作觀察與摘要、跨工作階段取回相關專案記憶，以及記憶搜尋。專案也包含安裝、搜尋記憶和代理成本報告等 Skills。它是包含外掛、記憶服務與多個 Skills 的專案，不是單一 Skill。';}
-   else if(owner.toLowerCase()==='obra'&&repo.toLowerCase()==='superpowers'){summary='Superpowers 是一套給 AI 程式代理使用的軟體開發方法與 Skills。它先協助釐清需求、討論設計並產生實作計畫，再依測試驅動開發完成工作，並使用子代理分工、程式碼審查與除錯流程。';features='它是一組可組合的開發工作流程，包含腦力激盪、撰寫計畫、測試驅動開發、系統化除錯、子代理開發、程式碼審查與 Git worktree 等 Skills；README 列出 Claude Code、Codex、Cursor 等安裝方式。'}
-   else{summary=meta.description||'此專案沒有提供簡短介紹。請查看 README 了解作者說明。';features='這是整個 GitHub 專案的介紹。若要查其中某一個 Skill，請貼上該 Skill 資料夾或 SKILL.md 的網址。';}
-   summary=await translateZh(summary);features=await translateZh(features);
+   var readme='',readmeName='README.md';
+   for(var candidate of ['README.md','readme.md','README.MD']){var readmeResponse=await fetch('https://raw.githubusercontent.com/'+owner+'/'+repo+'/'+branch+'/'+candidate);if(readmeResponse.ok){readme=await readmeResponse.text();readmeName=candidate;break;}}
+   if(!readme)throw Error('找不到這個專案的 README.md，無法根據專案說明整理內容。');
+   var readmePlain=readme.replace(/```[\s\S]*?```/g,' ').replace(/!\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/^\s*[-*_]{3,}\s*$/gm,' ').replace(/^\s{0,3}#{1,6}\s*/gm,'').replace(/<[^>]+>/g,' ').replace(/[\t ]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+   var readmeExcerpt=readmePlain.slice(0,3500),translatedReadme=await translateZh(readmeExcerpt);
    var esc=function(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});};
-   out.innerHTML='<article class="result"><span class="tag">GitHub 開源專案</span><h2>'+esc(meta.full_name)+'</h2><h3>這個專案是做什麼的</h3><p>'+esc(summary)+'</p><h3>功能整理</h3><p>'+esc(features)+'</p><button type="button" class="copy-explanation" onclick="copyExplanation(this)">一鍵複製說明</button><p><b>主要語言：</b>'+esc(meta.language||'未標示')+'　<b>星標：</b>'+meta.stargazers_count+'</p><p><a target="_blank" rel="noreferrer" href="'+esc(meta.html_url)+'">開啟 GitHub 專案 ↗</a>　<a target="_blank" rel="noreferrer" href="'+esc(meta.html_url+'/blob/'+branch+'/README.md')+'">查看 README ↗</a></p></article>';
-   status.textContent='已整理專案用途。若要查其中某一個 Skill，請貼該 Skill 資料夾或 SKILL.md 連結。';return;
+   out.innerHTML='<article class="result"><span class="tag">GitHub 開源專案 · 內容取自 '+esc(readmeName)+'</span><h2>'+esc(meta.full_name)+'</h2><h3>README 專案說明（繁體中文）</h3><p>'+esc(translatedReadme)+'</p><button type="button" class="copy-explanation" onclick="copyExplanation(this)">一鍵複製說明</button><p><b>主要語言：</b>'+esc(meta.language||'未標示')+'　<b>星標：</b>'+meta.stargazers_count+'</p><details><summary>查看 README 原文</summary><div class="readme">'+esc(readme.slice(0,12000))+'</div></details><p><a target="_blank" rel="noreferrer" href="'+esc(meta.html_url)+'">開啟 GitHub 專案 ↗</a>　<a target="_blank" rel="noreferrer" href="'+esc(meta.html_url+'/blob/'+branch+'/'+readmeName)+'">在 GitHub 查看 '+esc(readmeName)+' ↗</a></p></article>';
+   status.textContent='已根據 README 整理專案說明。';return;
   }
   var files=[];
   if(path.toLowerCase().endsWith('skill.md'))files=[{path:path}];
