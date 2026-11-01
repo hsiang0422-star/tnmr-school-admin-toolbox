@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills 週榜總覽</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column reading page; sources as a list, snapshots as tables. */
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --fg: #1d1f24;
+  --muted: #5d6270;
+  --line: #dcdcd4;
+  --accent: #1f5fa8;
+  --accent-soft: #e4edf8;
+  --up: #17724a;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171b;
+    --surface: #1e2127;
+    --fg: #ebebe6;
+    --muted: #9ba0ab;
+    --line: #33373f;
+    --accent: #8ab8f0;
+    --accent-soft: #223246;
+    --up: #6fcf9b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171b;
+  --surface: #1e2127;
+  --fg: #ebebe6;
+  --muted: #9ba0ab;
+  --line: #33373f;
+  --accent: #8ab8f0;
+  --accent-soft: #223246;
+  --up: #6fcf9b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+main { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font-size: 26px; margin: 0; text-wrap: balance; }
+h2 { font-size: 17px; margin: 0 0 12px; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--accent); }
+.intro { color: var(--muted); }
+.meta { font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input[type="search"] {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+}
+input[type="search"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+section.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  min-width: 0;
+}
+.sources { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.source {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.source h3 { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.source .tag {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.source p { color: var(--muted); font-size: 13px; }
+.table-wrap { overflow-x: auto; min-width: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.up { color: var(--up); font-weight: 600; }
+td a { overflow-wrap: anywhere; }
+.caption { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.notes { color: var(--muted); font-size: 13px; padding-left: 18px; margin: 0; display: grid; gap: 6px; }
+.hidden-by-filter { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<main>
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Skills 週榜總覽</h1>
+    <p class="intro">彙整目前公開的 GitHub 與 Claude Code Skills 排名來源，以及近期的榜單快照，方便隨時查看。</p>
+    <p class="meta">資料整理日期：2026-11-01。各站更新頻率與統計方式不同，數字僅供參考。</p>
+  </header>
+
+  <section class="panel" aria-labelledby="src-h">
+    <h2 id="src-h">排名來源</h2>
+    <div class="toolbar" style="margin-bottom:12px">
+      <input type="search" id="filter" placeholder="搜尋來源名稱或用途，例如：安裝、趨勢、星數" aria-label="搜尋排名來源">
+    </div>
+    <div class="sources" id="sources">
+      <article class="source" data-text="GitHub Trending 週榜 每週 趨勢 星數 github trending">
+        <span class="tag">每週</span>
+        <h3>GitHub Trending 週榜</h3>
+        <p>依 GitHub 週趨勢列出前 20 名，含星數、本週增量與摘要。</p>
+        <a href="https://github.com/wang-jie-2020/github-trend/issues/24">2026-W44 週報（第 24 期）</a>
+        <a href="https://gitstock.org/trending/weekly/2026-10-28">2026-10-28 週趨勢快照</a>
+      </article>
+      <article class="source" data-text="Claude Code Skills 周榜 星數增量 leaderboard star gain">
+        <span class="tag">每週更新</span>
+        <h3>github-skills-weekly</h3>
+        <p>Claude Code Agent Skills 周榜，依每週新增星數排序，並列出總星數。</p>
+        <a href="https://github.com/robinxxx/github-skills-weekly">GitHub 儲存庫</a>
+      </article>
+      <article class="source" data-text="skills.sh 安裝 排行榜 installs 趨勢 vercel">
+        <span class="tag">即時</span>
+        <h3>skills.sh 排行榜</h3>
+        <p>Vercel 經營的技能目錄，依匿名安裝遙測排序，可切換全部時間、24 小時趨勢或熱門。</p>
+        <a href="https://skills.sh">前往排行榜</a>
+      </article>
+      <article class="source" data-text="best-skills 每日 前100 安裝 社群 跨平台 csv">
+        <span class="tag">每日更新</span>
+        <h3>LinklyAI / best-skills</h3>
+        <p>每日更新的前 100 名技能排行，整合 skills.sh、ClawHub、騰訊 SkillHub、GitHub 與 X 的數據，提供 CSV。</p>
+        <a href="https://osrepos.com/repo/linklyai-best-skills">排行資料</a>
+      </article>
+      <article class="source" data-text="skillrank 每日 週變動 星數 排名 coding agent">
+        <span class="tag">每日簡報</span>
+        <h3>SkillRank</h3>
+        <p>每日簡報，記錄各儲存庫的排名與星數週變動，適合觀察哪些專案正在上升。</p>
+        <a href="https://skillrank.it.com">前往網站</a>
+      </article>
+      <article class="source" data-text="skillselion 週榜 install 排名 本週 skill of the week">
+        <span class="tag">每週</span>
+        <h3>Skillselion</h3>
+        <p>技能與 MCP 的排名榜，另有每週「Skill of the Week」，依搜尋熱度挑選。</p>
+        <a href="https://skillselion.com/skills">排行榜</a>
+        <a href="https://skillselion.com/skill-of-the-week">本週精選</a>
+      </article>
+      <article class="source" data-text="star history 星數 曲線 週增 global rank">
+        <span class="tag">工具</span>
+        <h3>Star History</h3>
+        <p>查詢任一儲存庫的星數曲線與週增量，可用來驗證榜單上的成長速度。</p>
+        <a href="https://www.star-history.com">前往網站</a>
+      </article>
+      <article class="source" data-text="agent-skills 熱門 本週 hot 清單">
+        <span class="tag">每週</span>
+        <h3>Agent Skills 熱門清單</h3>
+        <p>整理「本週最熱門」的 Claude 技能清單，列出各技能的分類與連結。</p>
+        <a href="https://agent-skills.cc/claude-skills/hot">前往清單</a>
+      </article>
+    </div>
+    <p class="caption" id="empty" hidden>沒有符合的來源，請換個關鍵字。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="gt-h">
+    <h2 id="gt-h">GitHub Trending 本週技能（2026-10-28 快照）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>儲存庫</th><th>用途</th><th>總星數</th><th>本週增量</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><a href="https://github.com/cloudflare/security-audit-skill">cloudflare/security-audit-skill</a></td><td>多階段程式碼安全稽核</td><td class="num">51,601</td><td class="num up">+16,388</td></tr>
+          <tr><td>2</td><td><a href="https://github.com/multica-ai/andrej-karpathy-skills">multica-ai/andrej-karpathy-skills</a></td><td>CLAUDE.md 行為規範</td><td class="num">225,958</td><td class="num up">+4,039</td></tr>
+          <tr><td>3</td><td>AgriciDaniel/claude-seo</td><td>通用 SEO 技能</td><td class="num">—</td><td class="num">—</td></tr>
+          <tr><td>4</td><td>Leonxlnx/taste-skill</td><td>讓代理人具備美感判斷</td><td class="num">104,396</td><td class="num up">+3,941</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">來源：<a href="https://gitstock.org/trending/weekly/2026-10-28">gitstock 週趨勢快照</a>。表中部分儲存庫的數字在快照中未列出。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="rw-h">
+    <h2 id="rw-h">Claude Code Skills 周榜（依本週星數增量）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>排名</th><th>儲存庫</th><th>本週增量</th><th>總星數</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><a href="https://github.com/tt-a1i/archify">tt-a1i/archify</a></td><td class="num up">+4</td><td class="num">88,341</td></tr>
+          <tr><td>2</td><td><a href="https://github.com/cathrynlavery/diagram-design">cathrynlavery/diagram-design</a></td><td class="num up">+4</td><td class="num">60,400</td></tr>
+          <tr><td>3</td><td><a href="https://github.com/earthtojake/text-to-cad">earthtojake/text-to-cad</a></td><td class="num up">+3</td><td class="num">22,786</td></tr>
+          <tr><td>4</td><td><a href="https://github.com/blader/humanizer">blader/humanizer</a></td><td class="num up">+2</td><td class="num">60,027</td></tr>
+          <tr><td>5</td><td><a href="https://github.com/emilkowalski/skills">emilkowalski/skills</a></td><td class="num up">+2</td><td class="num">49,115</td></tr>
+          <tr><td>6</td><td><a href="https://github.com/mattpocock/skills">mattpocock/skills</a></td><td class="num up">+1</td><td class="num">301,876</td></tr>
+          <tr><td>7</td><td><a href="https://github.com/JuliusBrussee/caveman">JuliusBrussee/caveman</a></td><td class="num up">+1</td><td class="num">114,652</td></tr>
+          <tr><td>8</td><td><a href="https://github.com/AgriciDaniel/claude-seo">AgriciDaniel/claude-seo</a></td><td class="num">+0</td><td class="num">19,901</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">來源：<a href="https://github.com/robinxxx/github-skills-weekly">robinxxx/github-skills-weekly</a>。快照日期未標示。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="sh-h">
+    <h2 id="sh-h">skills.sh 熱門技能（綜合分數）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>排名</th><th>技能</th><th>作者</th><th>綜合分數</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>find-skills</td><td>vercel-labs</td><td class="num">79.9</td></tr>
+          <tr><td>2</td><td>agent-browser</td><td>vercel-labs</td><td class="num">77.2</td></tr>
+          <tr><td>3</td><td>frontend-design</td><td>anthropics</td><td class="num">72.6</td></tr>
+          <tr><td>4</td><td>grill-me</td><td>mattpocock</td><td class="num">67.4</td></tr>
+          <tr><td>5</td><td>microsoft-foundry</td><td>microsoft</td><td class="num">67.1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">來源：<a href="https://osrepos.com/repo/linklyai-best-skills.md">best-skills 排行</a>。安裝數來自 skills.sh 遙測，各平台統計範圍不同，不宜直接比較。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="sr-h">
+    <h2 id="sr-h">SkillRank 週變動（2026-07-10 簡報）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>儲存庫</th><th>本週星數增量</th><th>本週排名變化</th></tr></thead>
+        <tbody>
+          <tr><td>addyosmani/agent-skills</td><td class="num up">+7,643</td><td class="num">上升 9</td></tr>
+          <tr><td>DietrichGebert/ponytail</td><td class="num up">+6,295</td><td class="num">上升 4</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">來源：<a href="https://skillrank.it.com/briefings/2026-07-10">SkillRank 2026-07-10 簡報</a>。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="sup-h">
+    <h2 id="sup-h">閱讀提醒</h2>
+    <ul class="notes">
+      <li>各站的統計日期不同，同一個儲存庫在不同來源的星數可能差很多。比較前請先看快照日期。</li>
+      <li>安裝數與星數衡量的東西不同：安裝數反映實際使用，星數反映關注度與宣傳，兩者都不代表程式品質。</li>
+      <li>排行榜只是發現工具，安裝前請先閱讀技能內容與授權，確認沒有權限過大或不安全的指令。</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+(function () {
+  var input = document.getElementById("filter");
+  var cards = document.querySelectorAll("#sources .source");
+  var empty = document.getElementById("empty");
+  input.addEventListener("input", function () {
+    var q = input.value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function (card) {
+      var hay = (card.getAttribute("data-text") + " " + card.textContent).toLowerCase();
+      var match = !q || hay.indexOf(q) !== -1;
+      card.classList.toggle("hidden-by-filter", !match);
+      if (match) shown++;
+    });
+    empty.hidden = shown !== 0;
+  });
+})();
+</script>
+
+</body></html>
