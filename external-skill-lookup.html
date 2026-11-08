@@ -13,7 +13,10 @@ async function searchExternalSkill(){
  var input=document.getElementById('url'),status=document.getElementById('status'),out=document.getElementById('results'),button=document.getElementById('searchSkill');
  status.textContent='正在查詢…';out.innerHTML='';button.disabled=true;
  try{
-  var u=new URL(input.value.trim());if(u.hostname!=='github.com')throw Error('請貼上 github.com 的公開網址。');
+  var raw=input.value.trim();if(!raw)throw Error('請先貼上 GitHub 網址。');
+  if(!/^https?:\/\//i.test(raw)){if(/^github\.com\//i.test(raw))raw='https://'+raw;else if(/^[\w.-]+\/[\w.-]+/.test(raw))raw='https://github.com/'+raw;}
+  var u;try{u=new URL(raw);}catch(parseErr){throw Error('這不是有效的網址。請貼上完整的 GitHub 連結，例如 https://github.com/擁有者/儲存庫/tree/main/技能資料夾，或直接貼「擁有者/儲存庫」。');}
+  if(u.hostname!=='github.com')throw Error('請貼上 github.com 的公開網址。');
   var p=u.pathname.split('/').filter(Boolean);if(p.length<2)throw Error('網址需包含擁有者和儲存庫名稱。');
   var owner=p[0],repo=p[1],branch='',path='';if(p[2]==='tree'||p[2]==='blob'){branch=p[3]||'';path=p.slice(4).join('/');}
   var api='https://api.github.com/repos/'+encodeURIComponent(owner)+'/'+encodeURIComponent(repo),mr=await fetch(api);if(!mr.ok)throw Error(mr.status===404?'找不到公開儲存庫。':'GitHub API 回應 '+mr.status);
