@@ -1,6 +1,6 @@
 /* Card ordering for toolbox pages.
    Mark a container with data-order="name". Visitors click 調整順序,
-   move cards with ▲ ▼, and the order is saved in this browser. */
+   drag cards (or use ▲ ▼), and the order is saved in this browser. */
 (function () {
   'use strict';
   var PREFIX = 'tnmr-card-order:';
@@ -8,7 +8,9 @@
     '.order-bar button{border:1px solid #dce7e2;background:#fff;color:#176b5c;border-radius:9px;padding:7px 11px;font:inherit;font-size:13px;font-weight:750;cursor:pointer}' +
     '.order-bar .primary{background:#176b5c;color:#fff;border-color:#176b5c}' +
     '.order-ctrl{display:none;gap:6px;margin-top:10px}' +
-    '.order-mode>.order-ctrl{display:flex}' +
+    '.order-mode>*>.order-ctrl{display:flex}' +
+    '.order-mode>[draggable=true]{cursor:grab}' +
+    '.order-mode>.order-dragging{opacity:.4}' +
     '.order-ctrl button{border:1px solid #dce7e2;background:#fff;color:#176b5c;border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;font-weight:750;cursor:pointer}' +
     '.order-ctrl button:disabled{opacity:.35;cursor:default}' +
     '.order-mode{outline:2px dashed #b9d6c8;outline-offset:6px;border-radius:12px}';
@@ -101,6 +103,46 @@
     });
   }
 
+  function setDraggable(c, on) {
+    items(c).forEach(function (x) {
+      if (on) x.el.setAttribute('draggable', 'true');
+      else x.el.removeAttribute('draggable');
+    });
+  }
+
+  function enableDrag(c) {
+    var dragged = null;
+    c.addEventListener('dragstart', function (e) {
+      if (!c.classList.contains('order-mode')) return;
+      var el = e.target.closest && e.target.closest('[draggable=true]');
+      if (!el || el.parentNode !== c) return;
+      dragged = el;
+      el.classList.add('order-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', ''); } catch (err) {}
+    });
+    c.addEventListener('dragover', function (e) {
+      if (!dragged) return;
+      e.preventDefault();
+      var over = e.target.closest && e.target.closest('[draggable=true]');
+      if (!over || over === dragged || over.parentNode !== c) return;
+      var r = over.getBoundingClientRect();
+      // In a multi-column grid, use horizontal position when the target sits on the same row.
+      var sameRow = Math.abs(r.top - dragged.getBoundingClientRect().top) < r.height / 2;
+      var after = sameRow ? e.clientX > r.left + r.width / 2 : e.clientY > r.top + r.height / 2;
+      var ref = after ? over.nextElementSibling : over;
+      if (ref !== dragged && dragged.nextElementSibling !== ref) c.insertBefore(dragged, ref);
+    });
+    function end() {
+      if (!dragged) return;
+      dragged.classList.remove('order-dragging');
+      dragged = null;
+      saveOrder(c); refresh(c);
+    }
+    c.addEventListener('drop', function (e) { if (dragged) { e.preventDefault(); end(); } });
+    c.addEventListener('dragend', end);
+  }
+
   function buildBar(c, observer) {
     var bar = document.createElement('div');
     bar.className = 'order-bar';
@@ -111,12 +153,13 @@
     reset.type = 'button';
     reset.textContent = '恢復預設順序';
     var hint = document.createElement('span');
-    hint.textContent = '調整後會自動儲存在這個瀏覽器';
+    hint.textContent = '可拖曳卡片或按 ▲ ▼ 調整，會自動儲存在這個瀏覽器';
     toggle.onclick = function () {
       var on = c.classList.toggle('order-mode');
       toggle.textContent = on ? '完成排序' : '調整順序';
       toggle.classList.toggle('primary', on);
       if (on) { addControls(c); refresh(c); }
+      setDraggable(c, on);
     };
     reset.onclick = function () {
       try { localStorage.removeItem(PREFIX + c.dataset.order); } catch (e) {}
@@ -131,11 +174,12 @@
     document.querySelectorAll('[data-order]').forEach(function (c) {
       var observer = new MutationObserver(function () {
         applySaved(c, observer);
-        if (c.classList.contains('order-mode')) { addControls(c); refresh(c); }
+        if (c.classList.contains('order-mode')) { addControls(c); refresh(c); setDraggable(c, true); }
       });
       applySaved(c, observer);
       observer.observe(c, { childList: true });
       buildBar(c, observer);
+      enableDrag(c);
     });
   }
 
