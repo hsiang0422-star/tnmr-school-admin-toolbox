@@ -9,8 +9,11 @@
     '.order-bar .primary{background:#176b5c;color:#fff;border-color:#176b5c}' +
     '.order-ctrl{display:none;gap:6px;margin-top:10px}' +
     '.order-mode>*>.order-ctrl{display:flex}' +
-    '.order-mode>[draggable=true]{cursor:grab}' +
-    '.order-mode>.order-dragging{opacity:.4}' +
+    '.order-mode>*{cursor:grab}' +
+    '.order-mode>* a{pointer-events:none}' +
+    '.order-mode>.order-dragging{opacity:.45;cursor:grabbing}' +
+    '.order-handle{display:inline-flex;align-items:center;border:1px dashed #9fc5b4;background:#f3faf6;color:#176b5c;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:750;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}' +
+    '.order-no-select,.order-no-select *{user-select:none;-webkit-user-select:none}' +
     '.order-ctrl button{border:1px solid #dce7e2;background:#fff;color:#176b5c;border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;font-weight:750;cursor:pointer}' +
     '.order-ctrl button:disabled{opacity:.35;cursor:default}' +
     '.order-mode{outline:2px dashed #b9d6c8;outline-offset:6px;border-radius:12px}';
@@ -87,7 +90,10 @@
         if (next) { c.insertBefore(next, x.el); }
         saveOrder(c); refresh(c);
       };
-      box.append(up, down);
+      var handle = document.createElement('span');
+      handle.className = 'order-handle'; handle.textContent = '⠿ 拖曳';
+      handle.setAttribute('aria-hidden', 'true');
+      box.append(handle, up, down);
       x.el.appendChild(box);
     });
   }
@@ -104,43 +110,65 @@
   }
 
   function setDraggable(c, on) {
-    items(c).forEach(function (x) {
-      if (on) x.el.setAttribute('draggable', 'true');
-      else x.el.removeAttribute('draggable');
-    });
+    /* Kept for the MutationObserver hook; dragging is handled by pointer events. */
+    items(c).forEach(function (x) { x.el.classList.toggle('order-item', !!on); });
   }
 
+  /* Pointer-event dragging works with mouse, finger and pen.
+     Mouse: drag anywhere on the card. Touch: drag the ⠿ handle (the rest of
+     the card still scrolls the page). */
   function enableDrag(c) {
-    var dragged = null;
-    c.addEventListener('dragstart', function (e) {
-      if (!c.classList.contains('order-mode')) return;
-      var el = e.target.closest && e.target.closest('[draggable=true]');
-      if (!el || el.parentNode !== c) return;
-      dragged = el;
-      el.classList.add('order-dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      try { e.dataTransfer.setData('text/plain', ''); } catch (err) {}
+    var drag = null;
+
+    function cardOf(node) {
+      while (node && node.parentNode !== c) node = node.parentNode;
+      return node && node.nodeType === 1 && !node.classList.contains('order-bar') ? node : null;
+    }
+
+    c.addEventListener('pointerdown', function (e) {
+      if (!c.classList.contains('order-mode') || e.button > 0) return;
+      var onHandle = e.target.closest && e.target.closest('.order-handle');
+      if (!onHandle && (e.pointerType !== 'mouse' || (e.target.closest && e.target.closest('button')))) return;
+      var card = cardOf(e.target);
+      if (!card) return;
+      drag = { el: card, x: e.clientX, y: e.clientY, moved: false, id: e.pointerId };
+      c.dataset.dragging = '1';
+      if (onHandle) e.preventDefault();
     });
-    c.addEventListener('dragover', function (e) {
-      if (!dragged) return;
+
+    document.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.moved) {
+        if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 6) return;
+        drag.moved = true;
+        drag.el.classList.add('order-dragging');
+        document.body.classList.add('order-no-select');
+      }
       e.preventDefault();
-      var over = e.target.closest && e.target.closest('[draggable=true]');
-      if (!over || over === dragged || over.parentNode !== c) return;
+      if (e.clientY < 70) window.scrollBy(0, -14);
+      else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
+      var over = cardOf(document.elementFromPoint(e.clientX, e.clientY));
+      if (!over || over === drag.el) return;
       var r = over.getBoundingClientRect();
-      // In a multi-column grid, use horizontal position when the target sits on the same row.
-      var sameRow = Math.abs(r.top - dragged.getBoundingClientRect().top) < r.height / 2;
+      var d = drag.el.getBoundingClientRect();
+      // Same row in a multi-column grid: compare horizontally; otherwise vertically.
+      var sameRow = Math.abs(r.top - d.top) < r.height / 2;
       var after = sameRow ? e.clientX > r.left + r.width / 2 : e.clientY > r.top + r.height / 2;
       var ref = after ? over.nextElementSibling : over;
-      if (ref !== dragged && dragged.nextElementSibling !== ref) c.insertBefore(dragged, ref);
-    });
-    function end() {
-      if (!dragged) return;
-      dragged.classList.remove('order-dragging');
-      dragged = null;
-      saveOrder(c); refresh(c);
+      if (ref !== drag.el && drag.el.nextElementSibling !== ref) c.insertBefore(drag.el, ref);
+    }, { passive: false });
+
+    function end(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var moved = drag.moved;
+      drag.el.classList.remove('order-dragging');
+      document.body.classList.remove('order-no-select');
+      drag = null;
+      delete c.dataset.dragging;
+      if (moved) { saveOrder(c); refresh(c); }
     }
-    c.addEventListener('drop', function (e) { if (dragged) { e.preventDefault(); end(); } });
-    c.addEventListener('dragend', end);
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
   }
 
   function buildBar(c, observer) {
@@ -173,6 +201,7 @@
     ensureStyle();
     document.querySelectorAll('[data-order]').forEach(function (c) {
       var observer = new MutationObserver(function () {
+        if (c.dataset.dragging) return; /* don't undo the card being dragged */
         applySaved(c, observer);
         if (c.classList.contains('order-mode')) { addControls(c); refresh(c); setDraggable(c, true); }
       });
