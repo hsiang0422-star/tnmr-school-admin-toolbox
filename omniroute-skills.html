@@ -28,7 +28,7 @@ a.src{font-size:13px;color:#1f6f5c}
 <div class="note">以下技能需先安裝並啟動 OmniRoute 伺服器才能使用。</div>
 </header>
 <div class="tools"><input id="search" type="search" placeholder="搜尋 OmniRoute 技能，例如：routing、budget、快取" aria-label="搜尋 OmniRoute 技能"><span id="count"></span></div>
-<div class="grid" id="grid"></div>
+<div class="grid" id="grid" data-order="skills-omniroute"></div>
 <div class="empty" id="empty">找不到符合的技能，試試其他關鍵字。</div>
 </main>
 <script>
@@ -51,4 +51,4 @@ grid.addEventListener('click',e=>{
 });
 render(omni);
 </script>
-</main></body></html>
+</main><script src="card-order.js"></script></body></html>
