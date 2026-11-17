@@ -27,6 +27,9 @@ body{margin:0;background:radial-gradient(circle at 90% 0,#d8eee5 0,transparent 2
 .links a.primary{background:var(--green);color:#fff;border-color:var(--green)}
 .links a.editor{color:#7a4a12;border:1px dashed #c9a46a;background:#fffaf0}
 .links a:hover{filter:brightness(.96)}
+.links button.copy-link{font:inherit;font-size:13px;font-weight:750;color:var(--green);border:1px solid var(--line);background:#fff;padding:8px 11px;border-radius:9px;cursor:pointer}
+.links button.copy-link:hover{background:var(--pale)}
+.links button.copy-link:focus-visible{outline:3px solid var(--green);outline-offset:2px}
 .note{margin-top:18px;padding:14px 17px;border-left:4px solid var(--orange);background:#fff8ef;border-radius:0 12px 12px 0;color:#694e36;font-size:13px}
 footer{text-align:center;color:#83928e;font-size:12px;margin-top:20px}
 @media(max-width:700px){.shell{padding:14px 12px 32px}.grid{grid-template-columns:1fr}.card{min-height:0}}
@@ -101,9 +104,31 @@ footer{text-align:center;color:#83928e;font-size:12px;margin-top:20px}
 <p>瀏覽校園危險地點的互動導覽頁面。</p>
 <div class="links"><a class="primary" href="https://claude.ai/artifact/9ATeNhtpuxHRd18ua17mbu" target="_blank" rel="noopener noreferrer">開啟導覽頁 ↗</a></div>
 </article>
+<article class="card">
+<div class="top"><span class="tag">校務活動</span><span class="tag">來賓簽到</span></div>
+<h2>校慶來賓簽到</h2>
+<p>校慶活動來賓報到與名單查閱，可開啟網站或複製連結分享。</p>
+<div class="links"><a class="primary" href="https://hsiang0422-star.github.io/tnmr-anniversary-checkin/" target="_blank" rel="noopener noreferrer">開啟簽到網站 ↗</a><button type="button" class="copy-link" data-copy-url="https://hsiang0422-star.github.io/tnmr-anniversary-checkin/" aria-label="複製校慶來賓簽到網站連結">複製分享連結</button></div>
+</article>
 </section>
 <aside class="note">工程網站可能各有不同的分享範圍。若連結提示沒有權限，請改開對應的公開版，或先確認原網站的分享設定。</aside>
 <footer>南特行政工具箱｜網站入口</footer>
 </main>
-<script src="card-order.js?v=4"></script></body>
+<script src="card-order.js?v=4"></script>
+<script>
+document.querySelectorAll('[data-copy-url]').forEach(function(button){
+  button.addEventListener('click',function(){
+    var url=button.dataset.copyUrl;
+    function done(){button.textContent='已複製連結';setTimeout(function(){button.textContent='複製分享連結';},1600);}
+    function fallback(){
+      var input=document.createElement('textarea');input.value=url;input.setAttribute('readonly','');
+      input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();
+      var copied=false;try{copied=document.execCommand('copy')}catch(error){}
+      input.remove();copied?done():(button.textContent='請手動複製');
+    }
+    if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(done,fallback)}else{fallback()}
+  });
+});
+</script>
+</body>
 </html>
