@@ -25,7 +25,7 @@ return [
 body,
 '【校內已知情形／補充說明】',
 school||'（未提供，請勿自行推測）'
-].join('\\n')
+].join('\n')
 }
 document.querySelector('#copy').onclick=async()=>{const p=makePrompt();if(!p)return;output.value=p;try{await navigator.clipboard.writeText(p);status.textContent='指令已複製。請貼到 ChatGPT 對話並送出。'}catch(e){status.textContent='指令已整理，請複製下方文字。'}};
 document.querySelector('#prepare').onclick=async()=>{const p=makePrompt();if(!p)return;output.value=p;try{await navigator.clipboard.writeText(p);const w=window.open('https://chatgpt.com/','_blank');status.textContent=w?'指令已複製並開啟 ChatGPT。請貼上指令並送出。':'指令已複製。請自行開啟 ChatGPT，貼上指令並送出。'}catch(e){status.textContent='指令已整理在下方；請複製後貼到 ChatGPT。'}};
