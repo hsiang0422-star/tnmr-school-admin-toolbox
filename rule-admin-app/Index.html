@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{font-family:"Microsoft JhengHei",system-ui,sans-serif;color:#203936;background:#f3f7f3;--green:#176b5c;--line:#d9e5df;--muted:#647873}
+    *{box-sizing:border-box}body{margin:0}main{max-width:850px;margin:28px auto;padding:0 16px 40px}.card{background:#fffefa;border:1px solid var(--line);border-radius:20px;padding:clamp(18px,4vw,34px);box-shadow:0 12px 32px #244b4210}
+    h1{font-size:clamp(25px,4vw,36px);margin:4px 0}.eyebrow{color:var(--green);font-size:13px;font-weight:800}.intro,.hint{color:var(--muted)}.intro{margin:8px 0 20px}.security{padding:12px 14px;background:#eaf4ef;border-radius:12px;font-size:14px;margin:16px 0}
+    label{display:grid;gap:6px;font-weight:750;margin:15px 0 5px}input,textarea,select{font:inherit;padding:11px 12px;border:1px solid #c9d9d2;border-radius:10px;width:100%;background:white;color:#203936}textarea{min-height:150px;line-height:1.7;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button{border:0;border-radius:10px;padding:11px 17px;background:var(--green);color:white;font:inherit;font-weight:800;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.status{min-height:1.6em;color:var(--green);font-weight:700}.filelink{color:var(--green);font-weight:750}.warning{font-size:13px;color:#745126;background:#fff5df;padding:12px;border-radius:10px}@media(max-width:620px){.row{grid-template-columns:1fr}main{margin:12px auto}}
+  </style>
+</head>
+<body>
+<main><section class="card">
+  <div class="eyebrow">南特行政工具箱｜僅供本人使用</div>
+  <h1>公文規則新增</h1>
+  <p class="intro">貼上新規則與來源，儲存後會追加到 yenju94 雲端硬碟的規則庫，方便不同電腦共用。</p>
+  <div class="security">🔐 請以你指定的 Google 帳號登入。此頁不會要求或保存 Google 密碼；伺服器會核對授權帳號。</div>
+  <div class="warning">新內容會標記為「待核驗」，不會直接變成有效規則。請附上官方依據、版本日期與適用範圍；核對後再納入正式規則，避免未查證或與現行規定衝突的內容直接套用。</div>
+  <form id="ruleForm">
+    <label for="rule">新規則內容 <span class="hint">可直接貼上完整文字</span></label>
+    <textarea id="rule" required maxlength="6000" placeholder="貼上希望新增的公文撰寫規則"></textarea>
+    <div class="row">
+      <label for="category">規則類別<input id="category" maxlength="100" placeholder="例如：稱謂、數字、版式"></label>
+      <label for="scope">適用範圍<input id="scope" maxlength="1000" placeholder="例如：校內簽呈、對外函文"></label>
+    </div>
+    <div class="row">
+      <label for="source">依據來源<input id="source" maxlength="2000" placeholder="官方網址、法規名稱或校內文件"></label>
+      <label for="date">版本／日期<input id="date" maxlength="100" placeholder="例如：115年版、更新日期"></label>
+    </div>
+    <div class="buttons"><button id="submit" type="submit">新增到雲端規則庫</button><a id="openFile" class="filelink" target="_blank" rel="noopener"></a></div>
+    <p id="status" class="status" role="status"></p>
+  </form>
+</section></main>
+<script>
+const form=document.querySelector('#ruleForm'),button=document.querySelector('#submit'),status=document.querySelector('#status'),openFile=document.querySelector('#openFile');
+google.script.run.withSuccessHandler(x=>{openFile.href=x.url;openFile.textContent='查看規則庫'}).withFailureHandler(e=>{status.textContent=e.message||'無法讀取規則庫。'}).getRuleFileInfo();
+form.addEventListener('submit',e=>{e.preventDefault();button.disabled=true;status.textContent='正在寫入 Drive…';const data={rule:document.querySelector('#rule').value,category:document.querySelector('#category').value,scope:document.querySelector('#scope').value,source:document.querySelector('#source').value,date:document.querySelector('#date').value};google.script.run.withSuccessHandler(x=>{status.textContent='已新增至雲端規則庫，狀態：待核驗。';form.reset();openFile.href=x.url;openFile.textContent='查看規則庫';button.disabled=false}).withFailureHandler(e=>{status.textContent=e.message||'寫入失敗，請稍後再試。';button.disabled=false}).submitRule(data)});
+</script>
+</body>
+</html>
+
