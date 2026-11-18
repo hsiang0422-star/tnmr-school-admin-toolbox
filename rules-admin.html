@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>公文規則新增｜南特行政工具箱</title>
+  <style>
+    :root{--ink:#213a39;--muted:#617775;--paper:#fffefa;--line:#dce7e2;--green:#176b5c;--pale:#e3f2ec;--orange:#e99a54}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 90% 0,#d8eee5 0,transparent 28rem),#f4f7f4;color:var(--ink);font-family:"Microsoft JhengHei","Arial Unicode MS",sans-serif;line-height:1.65}.shell{max-width:850px;margin:auto;padding:26px 18px 46px}.hero,.panel{background:var(--paper);border:1px solid var(--line);box-shadow:0 12px 36px #244b4210;border-radius:22px}.hero{padding:28px clamp(20px,5vw,48px)}.eyebrow{color:var(--green);font-weight:800;font-size:13px;letter-spacing:.06em}.hero h1{font-size:clamp(27px,4vw,40px);line-height:1.3;margin:7px 0}.hero p{margin:0;color:var(--muted);max-width:700px}.back{display:inline-flex;margin-top:16px;background:var(--green);color:white;padding:8px 14px;border-radius:999px;text-decoration:none;font-weight:750;font-size:14px}.panel{margin-top:18px;padding:clamp(16px,3vw,24px)}.panel h2{font-size:21px;margin:0 0 4px}.hint{color:var(--muted);font-size:14px;margin:0 0 14px}.security{padding:13px 15px;background:var(--pale);border-radius:12px;margin:14px 0;font-size:14px}.warning{padding:13px 15px;background:#fff5df;border-radius:12px;color:#76502d;font-size:14px;margin:14px 0}label{display:grid;gap:6px;font-weight:750;font-size:14px}input{width:100%;border:1px solid #ccdcd5;border-radius:10px;padding:11px 12px;background:white;color:var(--ink);font:inherit}.buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.buttons button{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--green);color:white;font:inherit;font-size:14px;font-weight:800;cursor:pointer}.buttons a{color:var(--green);font-weight:750;align-self:center}.status{font-size:13px;color:var(--green);min-height:1.5em;margin:8px 0 0}.steps{padding-left:22px}.steps li{margin:8px 0}footer{text-align:center;color:#83928e;font-size:12px;margin-top:20px}@media(max-width:600px){.shell{padding:13px 11px 28px}.hero{padding:22px 18px}.buttons button{flex:1 1 100%}}
+  </style>
+</head>
+<body><main class="shell">
+  <header class="hero"><div class="eyebrow">南特行政工具箱｜公文撰寫技能維護</div><h1>公文規則新增</h1><p>從行政工具箱開啟你的私人規則新增表單。規則會寫入 yenju94 雲端硬碟的 Markdown 規則庫，方便不同電腦共用。</p><a class="back" href="documents.html">← 返回公文工作專區</a></header>
+  <section class="panel"><h2>開啟私人規則表單</h2><p class="hint">首次使用時，請先依下方說明部署 Apps Script。貼上一次部署網址後，本瀏覽器會記住；其他電腦登入同一個 Google 帳號時，也可貼上同一網址開啟。</p>
+    <div class="security">🔐 表單本身由 Google Apps Script 提供，部署權限設為「僅限我本人」，並核對授權 Google 帳號。這個公開入口不會接收或儲存 Google 密碼、登入權杖或規則內容。</div>
+    <label for="appUrl">Apps Script 網頁應用程式網址<input id="appUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="url"></label>
+    <div class="buttons"><button type="button" id="saveOpen">儲存網址並開啟表單</button><button type="button" id="clear">清除此瀏覽器儲存的網址</button><a href="rule-admin-app/README.md" target="_blank" rel="noopener">查看一次性部署步驟與程式</a></div><p class="status" id="status" role="status"></p>
+  </section>
+  <section class="panel"><h2>首次設定</h2><ol class="steps"><li>登入 yenju94 Google 帳號，在 Google Apps Script 建立專案，加入 <code>rule-admin-app/Code.gs</code> 與 <code>rule-admin-app/Index.html</code>。</li><li>依部署指南設定授權帳號，部署為網頁應用程式，存取權限限定「僅限我本人」。</li><li>首次登入 Apps Script 表單後，會在該帳號 Drive 建立或連接「公文撰寫規則庫.md」。新增內容先寫入「待核驗規則」，不會直接當成有效規範。</li></ol><p class="warning">Apps Script 的部署網址尚未提供。部署完成後，將網址貼到上方；之後可從任何電腦開啟，Google 會要求以有權限的帳號登入。</p></section>
+  <footer>國立臺南特殊教育學校｜規則新增工具</footer>
+</main><script>
+const key='tnmrDocumentRulesWebApp',input=document.querySelector('#appUrl'),status=document.querySelector('#status');
+input.value=localStorage.getItem(key)||'';
+function validUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='script.google.com'&&/^\/macros\/s\/[^/]+\/exec\/?$/.test(u.pathname)}catch{return false}}
+document.querySelector('#saveOpen').onclick=()=>{const value=input.value.trim();if(!validUrl(value)){status.textContent='請貼上 Google Apps Script 部署後的 /exec 網址。';return}localStorage.setItem(key,value);status.textContent='網址已儲存在這個瀏覽器，正在開啟 Google 登入表單。';window.open(value,'_blank','noopener,noreferrer')};
+document.querySelector('#clear').onclick=()=>{localStorage.removeItem(key);input.value='';status.textContent='已清除此瀏覽器儲存的網址。'};
+</script></body></html>
+
