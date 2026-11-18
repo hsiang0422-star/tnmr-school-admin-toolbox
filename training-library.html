@@ -21,15 +21,21 @@ const tenderLifecycle=["履約","契約","驗收","保固"];
 function buildTender(){
  const keys=words(tenderSearch.value);
  tenderContent.replaceChildren();
+ const prompt=document.querySelector("#tenderPrompt");
  if(!keys.length){
   tenderCount.textContent="";
-  const prompt=document.querySelector("#tenderPrompt");
-  if(prompt){prompt.textContent="輸入關鍵字後，這裡才會顯示命中的招標研習段落。";prompt.hidden=false}
+  if(prompt){prompt.textContent="輸入關鍵字後，這裡才會顯示招標主題文件中的命中段落。";prompt.hidden=false}
   return
  }
+ const procurementTerms=tenderCore.concat(tenderLifecycle);
  const out=[];
  for(const doc of searchIndex){
-  const paragraphs=doc.paragraphs.map((p,i)=>({p,i})).filter(x=>keys.every(k=>x.p.text.toLocaleLowerCase().includes(k)));
+  const categories=doc.categories||[];
+  const tenderTopic=categories.some(category=>/招標|採購/.test(category))||hasAny(doc.title,tenderCore);
+  if(!tenderTopic)continue;
+  const paragraphs=doc.paragraphs.map((p,i)=>({p,i})).filter(x=>
+   hasAny(x.p.text,procurementTerms)&&keys.every(k=>x.p.text.toLocaleLowerCase().includes(k))
+  );
   if(paragraphs.length)out.push({doc,paragraphs})
  }
  let n=0;
@@ -37,7 +43,7 @@ function buildTender(){
   const section=document.createElement("section");section.className="tender-doc";
   const h=document.createElement("h3");h.textContent=doc.title;section.append(h);
   paragraphs.forEach(({p,i})=>{
-   const item=document.createElement("article");item.className="tender-text";item.dataset.q=p.text.toLocaleLowerCase();item.dataset.doc=doc.id;item.dataset.index=i;
+   const item=document.createElement("article");item.className="tender-text";item.dataset.doc=doc.id;item.dataset.index=i;
    const text=document.createElement("div");text.className="tender-paragraph";markInto(text,p.text,keys);
    const btn=document.createElement("button");btn.className="jump";btn.type="button";btn.textContent="在研習文件中查看";
    btn.onclick=()=>{const card=cards.find(x=>x.dataset.id===doc.id);card.querySelector(".reader").open=true;makeReader(doc,card,keys);card.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>{const target=card.querySelector('[data-pindex="'+i+'"]');if(target)target.scrollIntoView({behavior:"smooth",block:"center"})},200)};
@@ -45,9 +51,8 @@ function buildTender(){
   });
   tenderContent.append(section)
  });
- tenderCount.textContent="（"+n+" 段命中）";
- const prompt=document.querySelector("#tenderPrompt");
- if(prompt){prompt.textContent=n?"搜尋結果如下：":"沒有找到符合的招標研習段落。";prompt.hidden=!!n}
+ tenderCount.textContent="（"+n+" 個招標主題命中段落）";
+ if(prompt){prompt.textContent=n?"招標主題搜尋結果如下：":"招標主題文件中沒有符合的段落。";prompt.hidden=!!n}
 }
 function renderSearch(){terms=words(q.value);matchedDocIds=new Set();results.replaceChildren();const hits=[];if(terms.length)for(const doc of searchIndex){if(terms.every(k=>doc.title.toLocaleLowerCase().includes(k))){hits.push({doc,index:-1,text:doc.title,titleOnly:true});matchedDocIds.add(doc.id)}doc.paragraphs.forEach((p,index)=>{if(terms.every(k=>p.text.toLocaleLowerCase().includes(k))){hits.push({doc,index,text:p.text});matchedDocIds.add(doc.id)}})}
 count.textContent=terms.length?(hits.length?"找到 "+hits.length+" 個命中段落，顯示前 100 筆":"沒有找到符合的內容。"):"";hits.slice(0,100).forEach(hit=>{const item=document.createElement("article");item.className="result";const heading=document.createElement("strong");heading.textContent=hit.doc.title;const text=document.createElement("p");if(hit.titleOnly)text.textContent="文件名稱符合搜尋字詞";else markInto(text,snippet(hit.text,terms),terms);const button=document.createElement("button");button.type="button";button.textContent="在文件中查看標示";button.onclick=()=>{activeCategory="全部";filterCategoryButtons();const card=cards.find(c=>c.dataset.id===hit.doc.id),reader=card.querySelector(".reader");reader.open=true;card.querySelector(".docSearch").value="";makeReader(hit.doc,card,terms);card.scrollIntoView({behavior:"smooth",block:"start"});if(hit.index>=0)setTimeout(()=>{const p=card.querySelector('[data-pindex="'+hit.index+'"]');if(p)p.scrollIntoView({behavior:"smooth",block:"center"})},250)};item.append(heading,text,button);results.append(item)});
