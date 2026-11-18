@@ -49,5 +49,5 @@ function render(){
  empty.style.display=selected.length?"none":"block"
 }
 search.addEventListener("input",render);
-fetch(DATA_URL).then(r=>{if(!r.ok)throw Error("資料載入失敗");return r.json()}).then(d=>{files=Array.isArray(d.files)?d.files:[];render()}).catch(()=>{stats.textContent="資料載入失敗，請稍後重新整理。";empty.style.display="block"})
+fetch(DATA_URL+"?v=20261118-2",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("資料載入失敗");return r.json()}).then(d=>{files=Array.isArray(d.files)?d.files:[];render()}).catch(()=>{stats.textContent="資料載入失敗，請稍後重新整理。";empty.style.display="block"})
 </script></body></html>
