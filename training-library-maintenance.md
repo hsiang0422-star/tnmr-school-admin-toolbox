@@ -4,15 +4,15 @@
 
 ## 檔案用途
 
-- `training-library.html`：研習資料庫頁面，負責顯示 Google 文件內文、搜尋命中段落、Ctrl＋滑鼠滾輪縮放，以及 Google 文件原始預覽。
-- `training-library-index.json`：目前研習文件清單與搜尋內文資料。網站載入時會讀取這個檔案。
+- `training-library.html`：研習資料庫頁面，提供主題分類、全文搜尋、命中段落標示、Ctrl＋滑鼠滾輪縮放，以及 Google 文件原始預覽；招標資料集中在頁面下方的「招標研習資料庫」區塊。
+- `training-library-index.json`：研習文件清單、搜尋內文與主題分類。網站載入時會讀取這個檔案。
 - Google 文件原始檔：保存在 Google 雲端硬碟「研習講義」資料夾；JSON 內的 `url` 與 `preview_url` 指向原始文件。
 
 ## 從其他電腦更新資料
 
 1. 登入 GitHub，開啟 `hsiang0422-star/tnmr-school-admin-toolbox` 專案。
 2. 開啟 `training-library-index.json`，按鉛筆圖示編輯。
-3. 依下方格式更新文件標題或段落內容；新增文件時，在 `documents` 陣列中增加一筆資料。
+3. 依下方格式更新文件標題、段落或分類；新增文件時，在 `documents` 陣列中增加一筆資料。
 4. 確認 JSON 的逗號、引號與括號格式正確。
 5. 按 **Commit changes** 儲存到 `main` 分支。GitHub Pages 完成更新後，研習資料庫頁面會載入新版索引。
 
@@ -24,6 +24,7 @@
 - `title`：網站顯示的文件名稱。
 - `url`：原始 Google 文件連結。
 - `preview_url`：網站內嵌預覽連結。
+- `categories`：主題分類，例如 `招標採購與法規`、`工程發包與施工`、`勞動權益與派駐`。
 - `paragraphs`：可搜尋的段落；每段有 `text`、`style`、`list` 欄位。
 
 新增文件時，連結格式如下，請把範例 ID 換成 Google 文件的實際 ID：
@@ -34,6 +35,7 @@
   "title": "文件名稱",
   "url": "https://docs.google.com/document/d/Google文件ID/edit",
   "preview_url": "https://docs.google.com/document/d/Google文件ID/preview",
+  "categories": ["招標採購與法規"],
   "paragraphs": [
     {
       "text": "文件中的段落文字",
@@ -53,6 +55,10 @@
 - Google 文件原始預覽仍依 Google 雲端硬碟的分享權限開啟。
 
 
-## 招標研習頁面
+## 招標資料庫
 
-首頁的「招標研習資料庫」卡片會開啟 `tender-library.html`。此頁自動讀取 `training-library-index.json`，從研習文件中擷取含招標、採購、投標、決標、發包、流標、審標、評選、履約或驗收等關鍵詞的段落，並提供全文搜尋與原始 Google 文件預覽。更新索引資料後，招標頁會同步更新，不需另外維護另一份內容。
+招標研習資料已整合在 `training-library.html` 的「招標研習資料庫」區塊，不再使用獨立首頁卡片。招標區直接從 `training-library-index.json` 擷取段落，新增或更新研習索引後會同步更新。
+
+## 職安衛資料
+
+首頁「職安衛資料搜尋」卡片會開啟 `occupational-safety-library.html`。此頁提供職業安全、職業安全衛生、職安衛及職安法的 Google Drive 搜尋入口，搜尋結果仍由已登入帳戶依原始雲端硬碟權限顯示，不會把私人檔案名稱或內容複製到公開 GitHub。
