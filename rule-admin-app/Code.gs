@@ -1,10 +1,11 @@
 const RULES_FILE_NAME = '公文撰寫規則庫.md';
 const RULES_FILE_ID_KEY = 'DOCUMENT_RULES_FILE_ID';
 
-function doGet() {
+function doGet(e) {
   assertAllowedUser_();
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('公文規則新增')
+  const isTraining = e && e.parameter && e.parameter.view === 'training';
+  return HtmlService.createHtmlOutputFromFile(isTraining ? 'Training' : 'Index')
+    .setTitle(isTraining ? '研習資料庫' : '公文規則新增')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -42,6 +43,95 @@ function submitRule(form) {
   const current = file.getBlob().getDataAsString('UTF-8');
   file.setContent(current + block);
   return { ok: true, id: id, name: file.getName(), url: file.getUrl(), status: '待核驗' };
+}
+
+function getTrainingRecords() {
+  assertAllowedUser_();
+  const sheet = getTrainingSheet_();
+  const rows = sheet.getDataRange().getDisplayValues().slice(1).filter(r => r[0]);
+  return rows.map(r => ({
+    id:r[0], title:r[1], category:r[2], organizer:r[3], date:r[4], place:r[5],
+    hours:r[6], fee:r[7], link:r[8], tags:r[9], notes:r[10],
+    attachments:parseJson_(r[11], []), created:r[12], updated:r[13]
+  })).reverse();
+}
+
+function saveTrainingRecord(record) {
+  assertAllowedUser_();
+  record = record || {};
+  const title = clean_(record.title, 300);
+  if (!title) throw new Error('請填寫研習名稱。');
+  const sheet = getTrainingSheet_();
+  const rows = sheet.getDataRange().getDisplayValues();
+  const id = clean_(record.id, 100) || Utilities.getUuid();
+  const foundIndex = rows.findIndex((r, i) => i > 0 && r[0] === id);
+  const existing = foundIndex > 0 ? rows[foundIndex] : [];
+  const attachments = parseJson_(existing[11], []);
+  const uploads = Array.isArray(record.files) ? record.files : [];
+  if (uploads.length > 5) throw new Error('一次最多可上傳 5 個附件。');
+  const folder = getTrainingAttachmentFolder_();
+  uploads.forEach(item => {
+    if (!item || !item.data || !item.name) return;
+    const base64 = String(item.data).replace(/^data:[^,]*;base64,/, '');
+    if (base64.length > 7 * 1024 * 1024) throw new Error('單一附件須小於 5 MB。');
+    const bytes = Utilities.base64Decode(base64);
+    const blob = Utilities.newBlob(bytes, clean_(item.type, 120) || 'application/octet-stream', clean_(item.name, 240));
+    const file = folder.createFile(blob);
+    attachments.push({ name:file.getName(), url:file.getUrl() });
+  });
+  const now = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm:ss');
+  const created = existing[12] || now;
+  const values = [
+    id, title, clean_(record.category,100), clean_(record.organizer,300), clean_(record.date,100),
+    clean_(record.place,300), clean_(record.hours,100), clean_(record.fee,100), clean_(record.link,2000),
+    clean_(record.tags,500), clean_(record.notes,12000), JSON.stringify(attachments), created, now
+  ].map(sheetSafeText_);
+  if (foundIndex > 0) sheet.getRange(foundIndex + 1, 1, 1, values.length).setValues([values]);
+  else sheet.appendRow(values);
+  return { ok:true, id:id, created:created, updated:now };
+}
+
+function getTrainingSheet_() {
+  const props = PropertiesService.getScriptProperties();
+  const key = 'TRAINING_SPREADSHEET_ID';
+  let book;
+  const id = props.getProperty(key);
+  if (id) {
+    try { book = SpreadsheetApp.openById(id); } catch (e) { props.deleteProperty(key); }
+  }
+  if (!book) {
+    book = SpreadsheetApp.create('研習資料庫');
+    props.setProperty(key, book.getId());
+  }
+  let sheet = book.getSheetByName('研習紀錄');
+  if (!sheet) sheet = book.getSheets()[0].setName('研習紀錄');
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['ID','研習名稱','類別','主辦單位','日期','地點','時數','費用','資料連結','標籤','筆記','附件','建立時間','更新時間']);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getTrainingAttachmentFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const key = 'TRAINING_ATTACHMENT_FOLDER_ID';
+  const id = props.getProperty(key);
+  if (id) {
+    try { return DriveApp.getFolderById(id); } catch (e) { props.deleteProperty(key); }
+  }
+  const matches = DriveApp.getRootFolder().getFoldersByName('研習資料附件');
+  const folder = matches.hasNext() ? matches.next() : DriveApp.createFolder('研習資料附件');
+  props.setProperty(key, folder.getId());
+  return folder;
+}
+
+function sheetSafeText_(value) {
+  const text = String(value == null ? '' : value);
+  return /^[=+@\-\t\r]/.test(text) ? "'" + text : text;
+}
+
+function parseJson_(value, fallback) {
+  try { return value ? JSON.parse(value) : fallback; } catch (e) { return fallback; }
 }
 
 function getOrCreateRulesFile_() {
