@@ -1,1 +1,55 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=training-library.html#tender-library"><meta name="viewport" content="width=device-width,initial-scale=1"><title>招標研習資料庫｜研習資料庫</title></head><body><p>招標研習資料已整合到<a href="training-library.html#tender-library">研習資料庫</a>。</p><script>location.replace("training-library.html#tender-library");</script></body></html>
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>招標研習資料庫｜南特行政工具箱</title>
+<style>
+:root{--ink:#213a39;--muted:#617775;--paper:#fffefa;--line:#dce7e2;--green:#176b5c;--pale:#e3f2ec}
+*{box-sizing:border-box}body{margin:0;background:#f4f7f4;color:var(--ink);font-family:"Microsoft JhengHei",sans-serif;line-height:1.7}
+.shell{max-width:920px;margin:auto;padding:22px 15px 42px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:clamp(20px,4vw,38px);box-shadow:0 10px 30px #244b4210}
+.eyebrow{font-size:13px;color:var(--green);font-weight:800}.panel h1{font-size:clamp(28px,4vw,38px);margin:5px 0}.intro{color:var(--muted);margin:0 0 18px}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.links a{padding:8px 12px;border-radius:9px;background:var(--green);color:#fff;text-decoration:none;font-weight:750;font-size:14px}.links a.alt{background:#fff;color:var(--green);border:1px solid var(--line)}
+.search{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:11px;font:inherit}.hint,.status{color:var(--muted);font-size:13px;margin:9px 2px}
+.doc{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:15px}.doc h2{font-size:17px;margin:0 0 9px}.tag{display:inline-block;padding:3px 8px;margin:0 5px 5px 0;border-radius:20px;background:var(--pale);color:var(--green);font-weight:750;font-size:11px}
+.hit{margin:9px 0;padding:11px 12px;border-radius:10px;background:#f5f8f5;font-size:14px;white-space:pre-line}.hit mark{background:#ffec74;color:#242d27;border-radius:3px;padding:0 2px}
+.open{display:inline-block;margin-top:8px;padding:7px 10px;border-radius:8px;background:var(--green);color:white;text-decoration:none;font-size:13px;font-weight:750}
+.empty{display:none;padding:24px;text-align:center;color:var(--muted)}footer{margin-top:18px;color:var(--muted);font-size:12px}
+@media(max-width:600px){.shell{padding:12px}.doc{padding:12px}}
+</style></head><body><main class="shell"><section class="panel">
+<div class="eyebrow">南特行政工具箱｜研習資料專區</div><h1>招標研習資料庫</h1>
+<p class="intro">本頁只搜尋研習資料庫中招標、採購及履約主題的文件段落。完整研習文件仍收錄於研習資料庫。</p>
+<nav class="links"><a href="training-library.html">← 返回研習資料庫</a><a class="alt" href="./">返回行政工具箱</a></nav>
+<label for="search" class="hint">輸入關鍵字後，才會顯示符合的招標主題段落，命中詞會標黃。</label>
+<input id="search" class="search" type="search" placeholder="例如：招標、投標、驗收、履約" autocomplete="off">
+<div id="status" class="status" aria-live="polite">請輸入關鍵字搜尋招標研習內容。</div><div id="results"></div><div id="empty" class="empty">招標主題資料中沒有符合的段落。</div>
+<footer id="updated"></footer>
+</section></main>
+<script>
+const search=document.querySelector("#search"),results=document.querySelector("#results"),status=document.querySelector("#status"),empty=document.querySelector("#empty"),updated=document.querySelector("#updated");
+const tenderTerms=["招標","採購","投標","決標","發包","流標","廢標","採購法","評選","開標","審標","押標金","資格審查","招標文件","履約","契約","驗收","保固"];
+let documents=[];
+function words(value){return value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)}
+function tenderTopic(doc){return (doc.categories||[]).some(c=>/招標|採購/.test(c))||tenderTerms.some(t=>doc.title.includes(t))}
+function markText(node,text,keys){const low=text.toLocaleLowerCase();let pos=0;while(pos<text.length){let best=-1,term="";for(const key of keys){const at=low.indexOf(key,pos);if(at>=0&&(best<0||at<best)){best=at;term=text.slice(at,at+key.length)}}if(best<0){node.append(document.createTextNode(text.slice(pos)));break}node.append(document.createTextNode(text.slice(pos,best)));const mark=document.createElement("mark");mark.textContent=term;node.append(mark);pos=best+term.length}}
+function render(){
+ const keys=words(search.value);results.replaceChildren();empty.style.display="none";
+ if(!keys.length){status.textContent="請輸入關鍵字搜尋招標研習內容。";return}
+ const groups=[];
+ for(const doc of documents){
+  if(!tenderTopic(doc))continue;
+  const hits=(doc.paragraphs||[]).filter(p=>tenderTerms.some(term=>p.text.includes(term))&&keys.every(key=>p.text.toLocaleLowerCase().includes(key)));
+  if(hits.length)groups.push({doc,hits})
+ }
+ const count=groups.reduce((n,g)=>n+g.hits.length,0);
+ status.textContent=count?"找到 "+count+" 個招標主題命中段落。":"";
+ if(!count){empty.style.display="block";return}
+ for(const group of groups){
+  const article=document.createElement("article");article.className="doc";
+  const title=document.createElement("h2");title.textContent=group.doc.title;article.append(title);
+  (group.doc.categories||[]).filter(c=>/招標|採購|履約|稽核|工程/.test(c)).forEach(c=>{const tag=document.createElement("span");tag.className="tag";tag.textContent=c;article.append(tag)});
+  for(const hit of group.hits){const p=document.createElement("div");p.className="hit";markText(p,hit.text,keys);article.append(p)}
+  const link=document.createElement("a");link.className="open";link.href=group.doc.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="開啟原始文件";article.append(link);
+  results.append(article)
+ }
+}
+search.addEventListener("input",render);
+fetch("./training-library-index.json?v=20261118-tender",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("load");return r.json()}).then(data=>{documents=data.documents||[];updated.textContent="索引更新日期："+data.updated_at+"；招標資料來源："+documents.filter(tenderTopic).length+" 份相關研習文件。";render()}).catch(()=>{status.textContent="研習資料載入失敗，請稍後重新整理。"});
+</script></body></html>
