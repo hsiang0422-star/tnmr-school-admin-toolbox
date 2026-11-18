@@ -1,6 +1,8 @@
-# 公文規則新增頁（Google Apps Script）
+# 公文規則與研習資料管理頁（Google Apps Script）
 
-此新增頁以 Apps Script 直接寫入 Google Drive，適合由不同電腦登入同一個 Google 帳號使用。Google Drive MCP 連線不會轉交給公開 GitHub Pages；不要把 OAuth token、密碼或 API key 放進網站原始碼。
+此管理工具以 Apps Script、Google Drive 與 Google 試算表保存資料，適合由不同電腦登入同一個 Google 帳號使用。Google Drive MCP 連線不會轉交給公開 GitHub Pages；不要把 OAuth token、密碼或 API key 放進網站原始碼。
+
+部署時請使用這三個來源檔：[`Code.gs`](https://github.com/hsiang0422-star/tnmr-school-admin-toolbox/blob/main/rule-admin-app/Code.gs)、[`Index.html`](https://github.com/hsiang0422-star/tnmr-school-admin-toolbox/blob/main/rule-admin-app/Index.html)、[`Training.html`](https://github.com/hsiang0422-star/tnmr-school-admin-toolbox/blob/main/rule-admin-app/Training.html)。
 
 ## 一次性啟用
 
