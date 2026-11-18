@@ -14,7 +14,7 @@
     <label for="appUrl">Apps Script 網頁應用程式網址<input id="appUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="url"></label>
     <div class="buttons"><button type="button" id="saveOpen">儲存網址並開啟表單</button><button type="button" id="clear">清除此瀏覽器儲存的網址</button><a href="rule-admin-app/README.md" target="_blank" rel="noopener">查看一次性部署步驟與程式</a></div><p class="status" id="status" role="status"></p>
   </section>
-  <section class="panel"><h2>首次設定</h2><ol class="steps"><li>登入 yenju94 Google 帳號，在 Google Apps Script 建立專案，加入 <code>rule-admin-app/Code.gs</code>、<code>Index.html</code> 與 <code>Training.html</code>。</li><li>依部署指南設定授權帳號，部署為網頁應用程式，存取權限限定「僅限我本人」。</li><li>同一個部署網址支援公文規則與研習資料庫；資料寫入你的私人 Google Drive／試算表。新增公文規則先列為「待核驗」，核對後才納入正式規則。</li></ol><p class="warning">Apps Script 的部署網址尚未提供。部署完成後，將網址貼到上方；之後可從任何電腦開啟，Google 會要求以有權限的帳號登入。</p></section>
+  <section class="panel"><h2>首次設定</h2><ol class="steps"><li>登入 yenju94 Google 帳號，在 Google Apps Script 建立專案，加入 <code>Code.gs</code>、<code>Index.html</code>、<code>Training.html</code> 與 <code>TrainingPublic.html</code>。</li><li>依部署指南建立私人管理部署（僅限本人）及公開查詢部署（匿名唯讀）；兩個網址權限不同。</li><li>研習公開頁只顯示你勾選公開的欄位；私人筆記和附件只在管理頁可見。公文規則新增先列為「待核驗」，核對後才納入正式規則。</li></ol><p class="warning">部署完成後，將私人管理網址貼到上方；公開查詢網址會接到研習資料庫頁。Google 會要求以授權帳號登入私人管理頁。</p></section>
   <footer>國立臺南特殊教育學校｜規則新增工具</footer>
 </main><script>
 const key='tnmrDocumentRulesWebApp',input=document.querySelector('#appUrl'),status=document.querySelector('#status');
