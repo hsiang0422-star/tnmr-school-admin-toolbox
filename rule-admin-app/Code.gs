@@ -50,6 +50,12 @@ function getOrCreateRulesFile_() {
   if (id) {
     try { return DriveApp.getFileById(id); } catch (e) { props.deleteProperty(RULES_FILE_ID_KEY); }
   }
+  const existing = DriveApp.getRootFolder().getFilesByName(RULES_FILE_NAME);
+  if (existing.hasNext()) {
+    const file = existing.next();
+    props.setProperty(RULES_FILE_ID_KEY, file.getId());
+    return file;
+  }
   const initial = [
     '# 公文撰寫規則庫',
     '',
