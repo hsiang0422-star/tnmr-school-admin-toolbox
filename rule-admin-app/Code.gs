@@ -2,10 +2,16 @@ const RULES_FILE_NAME = '公文撰寫規則庫.md';
 const RULES_FILE_ID_KEY = 'DOCUMENT_RULES_FILE_ID';
 
 function doGet(e) {
+  const view = e && e.parameter && e.parameter.view;
+  if (view === 'training-public') {
+    return HtmlService.createHtmlOutputFromFile('TrainingPublic')
+      .setTitle('研習資料公開查詢')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  }
   assertAllowedUser_();
-  const isTraining = e && e.parameter && e.parameter.view === 'training';
+  const isTraining = view === 'training';
   return HtmlService.createHtmlOutputFromFile(isTraining ? 'Training' : 'Index')
-    .setTitle(isTraining ? '研習資料庫' : '公文規則新增')
+    .setTitle(isTraining ? '研習資料管理' : '公文規則新增')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -50,9 +56,18 @@ function getTrainingRecords() {
   const sheet = getTrainingSheet_();
   const rows = sheet.getDataRange().getDisplayValues().slice(1).filter(r => r[0]);
   return rows.map(r => ({
-    id:r[0], title:r[1], category:r[2], organizer:r[3], date:r[4], place:r[5],
-    hours:r[6], fee:r[7], link:r[8], tags:r[9], notes:r[10],
-    attachments:parseJson_(r[11], []), created:r[12], updated:r[13]
+    id:r[0], publish:r[1] === 'TRUE', title:r[2], category:r[3], organizer:r[4], date:r[5], place:r[6],
+    hours:r[7], fee:r[8], link:r[9], tags:r[10], summary:r[11], notes:r[12],
+    attachments:parseJson_(r[13], []), created:r[14], updated:r[15]
+  })).reverse();
+}
+
+function getPublicTrainingRecords() {
+  const sheet = getTrainingSheet_();
+  const rows = sheet.getDataRange().getDisplayValues().slice(1).filter(r => r[0] && r[1] === 'TRUE');
+  return rows.map(r => ({
+    title:r[2], category:r[3], organizer:r[4], date:r[5], place:r[6], hours:r[7],
+    fee:r[8], link:r[9], tags:r[10], summary:r[11]
   })).reverse();
 }
 
@@ -66,7 +81,7 @@ function saveTrainingRecord(record) {
   const id = clean_(record.id, 100) || Utilities.getUuid();
   const foundIndex = rows.findIndex((r, i) => i > 0 && r[0] === id);
   const existing = foundIndex > 0 ? rows[foundIndex] : [];
-  const attachments = parseJson_(existing[11], []);
+  const attachments = parseJson_(existing[13], []);
   const uploads = Array.isArray(record.files) ? record.files : [];
   if (uploads.length > 5) throw new Error('一次最多可上傳 5 個附件。');
   const folder = getTrainingAttachmentFolder_();
@@ -80,11 +95,11 @@ function saveTrainingRecord(record) {
     attachments.push({ name:file.getName(), url:file.getUrl() });
   });
   const now = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd HH:mm:ss');
-  const created = existing[12] || now;
+  const created = existing[14] || now;
   const values = [
-    id, title, clean_(record.category,100), clean_(record.organizer,300), clean_(record.date,100),
+    id, record.publish ? 'TRUE' : 'FALSE', title, clean_(record.category,100), clean_(record.organizer,300), clean_(record.date,100),
     clean_(record.place,300), clean_(record.hours,100), clean_(record.fee,100), clean_(record.link,2000),
-    clean_(record.tags,500), clean_(record.notes,12000), JSON.stringify(attachments), created, now
+    clean_(record.tags,500), clean_(record.summary,6000), clean_(record.notes,12000), JSON.stringify(attachments), created, now
   ].map(sheetSafeText_);
   if (foundIndex > 0) sheet.getRange(foundIndex + 1, 1, 1, values.length).setValues([values]);
   else sheet.appendRow(values);
@@ -105,9 +120,20 @@ function getTrainingSheet_() {
   }
   let sheet = book.getSheetByName('研習紀錄');
   if (!sheet) sheet = book.getSheets()[0].setName('研習紀錄');
+  const headers = ['ID','公開查詢','研習名稱','類別','主辦單位','日期','地點','時數','費用','公開連結','標籤','公開摘要','私人筆記','附件','建立時間','更新時間'];
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['ID','研習名稱','類別','主辦單位','日期','地點','時數','費用','資料連結','標籤','筆記','附件','建立時間','更新時間']);
+    sheet.appendRow(headers);
     sheet.setFrozenRows(1);
+  } else {
+    const oldHeader = sheet.getRange(1,1,1,sheet.getLastColumn()).getDisplayValues()[0];
+    if (oldHeader.length === 14 && oldHeader[0] === 'ID') {
+      const oldRows = sheet.getDataRange().getDisplayValues().slice(1).filter(r=>r[0]);
+      const migrated = oldRows.map(r=>[r[0],'FALSE',r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],'',r[10],r[11],r[12],r[13]]);
+      sheet.clearContents();
+      sheet.appendRow(headers);
+      if (migrated.length) sheet.getRange(2,1,migrated.length,headers.length).setValues(migrated);
+      sheet.setFrozenRows(1);
+    }
   }
   return sheet;
 }
