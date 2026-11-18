@@ -3,13 +3,14 @@
 <style>
 :root{--ink:#213a39;--muted:#617775;--paper:#fffefa;--line:#dce7e2;--green:#176b5c;--pale:#e3f2ec;--orange:#e99a54}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 90% 0,#d8eee5 0,transparent 28rem),#f4f7f4;color:var(--ink);font-family:"Microsoft JhengHei","Arial Unicode MS",sans-serif;line-height:1.65}.shell{max-width:1050px;margin:auto;padding:26px 18px 46px}.hero,.panel{background:var(--paper);border:1px solid var(--line);box-shadow:0 12px 36px #244b4210;border-radius:22px}.hero{padding:28px clamp(20px,5vw,48px);position:relative;overflow:hidden}.hero:after{content:"✉";position:absolute;right:30px;top:8px;font-size:76px;color:#e9f3ec}.eyebrow{color:var(--green);font-weight:800;font-size:13px;letter-spacing:.06em}.hero h1{font-size:clamp(27px,4vw,40px);line-height:1.3;margin:7px 0}.hero p{margin:0;color:var(--muted);max-width:740px}.back{display:inline-flex;margin-top:16px;background:var(--green);color:white;padding:8px 14px;border-radius:999px;text-decoration:none;font-weight:750;font-size:14px}.panel{margin-top:18px;padding:clamp(16px,3vw,24px)}.panel h2{font-size:21px;margin:0 0 4px}.intro{margin:0 0 15px;color:var(--muted);font-size:14px}.form{display:grid;gap:13px}.form label{display:grid;gap:6px;font-weight:750;font-size:14px}.form input[type=text],.form textarea{width:100%;border:1px solid #ccdcd5;border-radius:10px;padding:11px 12px;background:white;color:var(--ink);font:inherit}.form textarea{resize:vertical;line-height:1.7}.upload{border:1px dashed #90b7a9;border-radius:14px;background:#f6fbf7;padding:16px}.upload input{display:block;margin-top:9px;font:inherit;max-width:100%}.pastezone{margin-top:12px;padding:15px;border:2px dashed #90b7a9;border-radius:12px;background:white;text-align:center;color:var(--green);font-weight:750;cursor:text;outline:none}.pastezone:focus{box-shadow:0 0 0 3px #176b5c22;border-color:var(--green)}.preview .remove-file{display:block;margin:5px 0 0;border:1px solid #e6c8c4;border-radius:7px;background:#fff;color:#9b3933;padding:4px 9px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}.preview .file-card{min-width:130px;max-width:190px;padding:8px;border:1px solid var(--line);border-radius:9px;background:#fff}.preview .file-name{font-size:12px;color:var(--muted);overflow-wrap:anywhere}.hint{font-size:12px;font-weight:400;color:var(--muted)}.preview{display:flex;gap:10px;overflow:auto;margin-top:12px}.preview figure{margin:0;min-width:130px;max-width:190px}.preview img{width:100%;height:125px;object-fit:contain;background:white;border:1px solid var(--line);border-radius:9px}.preview figcaption{font-size:11px;color:var(--muted);overflow-wrap:anywhere}.buttons{display:flex;flex-wrap:wrap;gap:9px}.buttons button{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:white;color:var(--green);font:inherit;font-size:14px;font-weight:800;cursor:pointer}.buttons .primary{background:var(--green);color:white;border-color:var(--green)}.status{font-size:13px;color:var(--green);min-height:1.5em;margin:0}.warning{margin:14px 0 0;padding:12px 14px;background:#fff5df;border-radius:11px;color:#76502d;font-size:13px}.output{margin-top:16px}.output textarea{width:100%;min-height:250px}.output label{display:grid;gap:7px;font-size:14px;font-weight:800}footer{text-align:center;color:#83928e;font-size:12px;margin-top:20px}@media(max-width:600px){.shell{padding:13px 11px 28px}.hero{padding:22px 18px}.hero:after{font-size:52px;right:16px}.buttons button{flex:1 1 100%}}
 </style></head><body><main class="shell"><header class="hero"><div class="eyebrow">南特行政工具箱｜來文處理</div><h1>收到來文｜擬辦與回復工作區</h1><p>貼上來文文字後，頁面會整理成 ChatGPT 指令，協助分析來文要求、辦理期限、承辦權責與待確認事項，再擬出簽辦稿；有需要時也一併準備回復函草稿。</p><a class="back" href="documents.html">← 返回公文工作專區</a></header>
-<section class="panel"><h2>① 提供來文文字</h2><p class="intro">請直接貼上來文文字；若手邊只有圖片或掃描檔，請先用 OCR 擷取文字再貼入。也可補充校內現況或處理想法。</p><form id="incomingForm" class="form"><label>來文文字<textarea id="incomingText" rows="8" placeholder="貼上來文主旨、說明、辦理期限及其他文字內容；掃描檔請先完成 OCR 辨識後再貼入。"></textarea></label><label>校內已知情形／補充說明<textarea id="schoolFacts" rows="4" placeholder="例如：本校現有設備情形、已詢問的單位、初步估價或您希望採取的處理方式；不確定的部分可留白。"></textarea></label><div class="buttons"><button type="button" class="primary" id="prepare">整理指令並開啟 ChatGPT</button><button type="button" id="copy">只複製指令</button><button type="reset">清除內容</button></div><p id="status" class="status" role="status"></p></form><p class="warning">🔒 來文文字只用來在本頁整理指令，不會上傳到網站。按下「整理指令」後，請貼到 ChatGPT 對話送出。若手邊只有圖片或掃描檔，請先用 OCR 擷取文字；涉及個人資料或敏感資訊時，請依校內規範處理。</p></section>
+<section class="panel"><h2>① 提供來文文字</h2><p class="intro">請直接貼上來文文字，或上傳來文圖片由頁面在本機辨識文字。也可補充校內現況或處理想法。</p><form id="incomingForm" class="form"><div class="upload"><strong>上傳來文圖片（可多選，JPG／PNG）</strong><span class="hint">辨識在您的瀏覽器內完成，圖片不會上傳；辨識結果會加入下方「來文文字」，請核對後再整理指令。</span><input type="file" id="imageFile" accept="image/*" multiple></div><label>來文文字<textarea id="incomingText" rows="8" placeholder="貼上來文主旨、說明、辦理期限及其他文字內容；也可上傳圖片自動辨識。"></textarea></label><label>校內已知情形／補充說明<textarea id="schoolFacts" rows="4" placeholder="例如：本校現有設備情形、已詢問的單位、初步估價或您希望採取的處理方式；不確定的部分可留白。"></textarea></label><div class="buttons"><button type="button" class="primary" id="prepare">整理指令並開啟 ChatGPT</button><button type="button" id="copy">只複製指令</button><button type="reset">清除內容</button></div><p id="status" class="status" role="status"></p></form><p class="warning">🔒 來文文字只用來在本頁整理指令，不會上傳到網站。按下「整理指令」後，請貼到 ChatGPT 對話送出。上傳的圖片只在本機辨識、不會上傳；涉及個人資料或敏感資訊時，請依校內規範處理。</p></section>
 <section class="panel output"><label for="promptOutput">② 指令預覽（可編修、複製）<textarea id="promptOutput" rows="13" placeholder="填入來文內容後，按上方按鈕整理指令。"></textarea></label></section><footer>國立臺南特殊教育學校｜公文擬稿參考工具</footer></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js"></script>
 <script>
 const text=document.querySelector('#incomingText'),facts=document.querySelector('#schoolFacts'),output=document.querySelector('#promptOutput'),status=document.querySelector('#status');
 function makePrompt(){
 const body=text.value.trim(),school=facts.value.trim();
-if(!body){status.textContent='請先貼上來文文字；掃描檔請先以 OCR 擷取文字。';return ''}
+if(!body){status.textContent='請先貼上來文文字或上傳來文圖片。';return ''}
 return [
 '【採用技能】本提示詞依據使用者的「taiwan-official-document-drafting」技能規範整理；請以下列明列原則執行，不依賴 @ 提及載入技能。',
 '請依照「taiwan-official-document-drafting」公文撰擬技能，整理以下收到來文的擬辦與回復草稿。先依技能核對可用的 Google Drive 校內規範與官方現行依據；若無法讀取或查證，明確列出限制，不得宣稱已核實。',
@@ -30,4 +31,23 @@ school||'（未提供，請勿自行推測）'
 document.querySelector('#copy').onclick=async()=>{const p=makePrompt();if(!p)return;output.value=p;try{await navigator.clipboard.writeText(p);status.textContent='指令已複製。請貼到 ChatGPT 對話並送出。'}catch(e){status.textContent='指令已整理，請複製下方文字。'}};
 document.querySelector('#prepare').onclick=async()=>{const p=makePrompt();if(!p)return;output.value=p;try{await navigator.clipboard.writeText(p);const w=window.open('https://chatgpt.com/','_blank');status.textContent=w?'指令已複製並開啟 ChatGPT。請貼上指令並送出。':'指令已複製。請自行開啟 ChatGPT，貼上指令並送出。'}catch(e){status.textContent='指令已整理在下方；請複製後貼到 ChatGPT。'}};
 document.querySelector('#incomingForm').addEventListener('reset',()=>{output.value='';status.textContent=''});
+const imageFile=document.querySelector('#imageFile');
+imageFile.addEventListener('change',async()=>{
+const files=[...imageFile.files];
+if(!files.length)return;
+if(typeof Tesseract==='undefined'){status.textContent='OCR 元件未能載入，請確認網路連線後重新整理頁面。';imageFile.value='';return}
+const added=[];
+try{
+for(let i=0;i<files.length;i++){
+const label=`辨識中（${i+1}/${files.length}）`;
+status.textContent=label+'…';
+const r=await Tesseract.recognize(files[i],'chi_tra+eng',{logger:m=>{if(m.status==='recognizing text')status.textContent=`${label}：${Math.round(m.progress*100)}%`}});
+const t=r.data.text.trim();
+if(t)added.push(t);
+}
+text.value=[text.value.trim(),...added].filter(Boolean).join('\n\n');
+status.textContent=added.length?'圖片文字已加入「來文文字」，請核對內容（OCR 可能有錯字）後再整理指令。':'未辨識出文字，請換清楚的圖片或手動貼上。';
+}catch(e){status.textContent='辨識失敗，請換一張清楚的圖片或改為手動貼上文字。'}
+finally{imageFile.value=''}
+});
 </script></body></html>
