@@ -68,6 +68,13 @@ textarea{resize:vertical}
 .summary-box{white-space:pre-wrap;font-size:15px;background:#fff;border:1px solid #e8eeeb;border-radius:12px;padding:10px 12px;margin-top:10px;display:none}
 .summary-box.show{display:block}
 #scriptText{min-height:220px;flex:1;font-size:15px}
+.desktop{margin-top:14px;border-radius:18px}
+.desktop h2{font-size:17px;margin:0}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.dl{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 13px;text-decoration:none;color:var(--ink)}
+.dl strong{color:var(--green);font-size:15px}
+.dl span{font-size:12px;color:var(--muted)}
+.dl:hover{background:var(--pale)}
 footer{text-align:center;color:#83928e;font-size:12px;margin-top:22px}
 footer a{color:var(--green)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -141,6 +148,7 @@ footer a{color:var(--green)}
     <p class="hint" style="margin:10px 0 0">字幕用的是瀏覽器內建語音辨識（Chrome / Edge 會把聲音送到 Google 或 Microsoft 辨識）。翻譯內容會送到你選的服務。保密會議請先確認可以使用；有些地方錄音或轉錄需要所有人同意。</p>
   </details>
 
+
   <nav class="tabs" id="tabs" aria-label="切換區塊">
     <button type="button" data-tab="capPanel" class="active">📝 字幕</button>
     <button type="button" data-tab="replyPanel">💬 回覆</button>
@@ -189,6 +197,18 @@ footer a{color:var(--green)}
       <textarea id="scriptText" placeholder="貼上簡報稿、準備好的回答、人名與專有名詞。翻譯和回覆會參考這裡，名字和術語就會用對。"></textarea>
     </section>
   </div>
+
+  <section class="panel desktop" aria-labelledby="desktopTitle">
+    <h2 id="desktopTitle">💻 想要功能更完整？下載桌面版 OwnVoice Meet</h2>
+    <p class="hint" style="font-size:14px;margin:6px 0 10px">桌面版能直接收到電腦播放的會議聲音（Windows），不用開喇叭；另有浮動字幕、會議錄音存檔、快捷鍵叫出回覆視窗。由原作者 Zaious 開發與發布（版本 0.4.0）。</p>
+    <div class="dl-grid">
+      <a class="dl" href="https://github.com/Zaious/ownvoice-meet/releases/download/v0.4.0/OwnVoice.Meet_0.4.0_x64-setup.exe" rel="noopener noreferrer"><strong>🪟 Windows 安裝版</strong><span>.exe｜不需系統管理員權限，可自動更新</span></a>
+      <a class="dl" href="https://github.com/Zaious/ownvoice-meet/releases/download/v0.4.0/OwnVoice.Meet_0.4.0_x64_portable.zip" rel="noopener noreferrer"><strong>🪟 Windows 免安裝版</strong><span>.zip｜解壓縮後執行 OwnVoice Meet.exe</span></a>
+      <a class="dl" href="https://github.com/Zaious/ownvoice-meet/releases/download/v0.4.0/OwnVoice.Meet_0.4.0_universal.dmg" rel="noopener noreferrer"><strong>🍎 Mac 版</strong><span>.dmg｜Intel 與 Apple 晶片皆可；只能收麥克風</span></a>
+      <a class="dl" href="https://github.com/Zaious/ownvoice-meet/releases/latest" target="_blank" rel="noopener noreferrer"><strong>📦 所有版本與更新說明</strong><span>GitHub 下載頁（有新版時看這裡）</span></a>
+    </div>
+    <p class="hint" style="margin:10px 0 0">Windows 版尚無數位簽章，第一次開啟若出現「Windows 已保護您的電腦」，按「其他資訊」→「仍要執行」。Mac 版：打開 dmg，把 OwnVoice Meet 拖到「應用程式」。桌面版使用說明見 <a href="https://github.com/Zaious/ownvoice-meet/blob/main/docs/MANUAL.md" target="_blank" rel="noopener noreferrer">使用手冊</a>。</p>
+  </section>
 
   <footer>
     概念來自開源專案 <a href="https://github.com/Zaious/ownvoice-meet" target="_blank" rel="noopener noreferrer">OwnVoice Meet</a>（Apache-2.0，桌面版功能更完整）；本頁為南特行政工具箱另行製作的網頁版。<br>
@@ -328,8 +348,40 @@ footer a{color:var(--green)}
     n.textContent = msg;
   }
 
-  // ---------- 呼叫 AI 服務 ----------
-  function callModel(system, user, maxTokens) {
+  // ---------- 呼叫 AI 服務（排隊 + 遇到 429 自動重試） ----------
+  var MAX_PARALLEL = 2, MAX_RETRIES = 4;
+  var queue = [], running = 0;
+  // opts.priority: 回覆、摘要插隊；opts.onWait(秒數): 等待重試時通知畫面
+  function callModel(system, user, maxTokens, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve, reject) {
+      var job = { system: system, user: user, maxTokens: maxTokens, opts: opts, resolve: resolve, reject: reject, tries: 0 };
+      if (opts.priority) queue.unshift(job); else queue.push(job);
+      pump();
+    });
+  }
+  function pump() {
+    while (running < MAX_PARALLEL && queue.length) runJob(queue.shift());
+  }
+  function runJob(job) {
+    running++;
+    rawCall(job.system, job.user, job.maxTokens).then(function (r) {
+      running--; job.resolve(r); pump();
+    }, function (e) {
+      running--;
+      var retryable = e.status === 429 || e.status === 500 || e.status === 502 || e.status === 503 || e.status === 504;
+      if (retryable && job.tries < MAX_RETRIES) {
+        job.tries++;
+        var wait = e.retryAfter || Math.min(2 * Math.pow(2, job.tries - 1), 20);
+        if (job.opts.onWait) job.opts.onWait(wait, job.tries);
+        setTimeout(function () { queue.unshift(job); pump(); }, wait * 1000);
+      } else {
+        job.reject(e);
+      }
+      pump();
+    });
+  }
+  function rawCall(system, user, maxTokens) {
     var m = currentModel(), key = currentKey();
     if (!key) {
       $('settingsBox').open = true;
@@ -380,10 +432,21 @@ footer a{color:var(--green)}
   function readJson(r) {
     return r.json().catch(function () { return {}; }).then(function (d) {
       if (!r.ok) {
-        var msg = (d.error && (d.error.message || d.error)) || r.statusText || '';
+        var errObj = Array.isArray(d) ? (d[0] && d[0].error) : d.error;
+        var raw = (errObj && (errObj.message || errObj.status || errObj)) || r.statusText || '';
+        var msg = String(raw);
+        var provider = currentModel().provider;
         if (r.status === 401 || r.status === 403) msg = '金鑰無效或沒有權限（' + r.status + '）。' + msg;
-        else if (r.status === 429) msg = '請求太頻繁或額度不足（429）。' + msg;
-        throw new Error(String(msg).slice(0, 240));
+        else if (r.status === 404) msg = '找不到這個模型（404），請在設定換一個模型試試。' + msg;
+        else if (r.status === 429) {
+          msg = '請求太頻繁或額度不足（429，已自動重試仍失敗）。' +
+            (provider === 'gemini' ? '請到 aistudio.google.com/api-keys 確認這把金鑰的方案不是「Free tier」。' : '請確認帳號已儲值、未達每分鐘上限。') + ' 原文：' + msg;
+        }
+        var err = new Error(msg.slice(0, 400));
+        err.status = r.status;
+        var ra = parseFloat(r.headers.get('retry-after'));
+        if (ra > 0 && ra < 120) err.retryAfter = ra;
+        throw err;
       }
       return d;
     });
@@ -435,7 +498,9 @@ footer a{color:var(--green)}
       '規則：只輸出譯文本身，不要加引號、註解或原文；專有名詞與人名參考講稿，沒把握就保留原文；語音辨識可能有錯字，依上下文合理理解。\n\n' +
       '講稿與名詞參考：\n' + scriptContext();
     var user = (before ? '前文（只供參考，不要翻）：\n' + before + '\n\n' : '') + '這一句：\n' + s.text;
-    callModel(system, user, 1024).then(function (zh) { setZh(s, zh || '（沒有譯文）'); })
+    callModel(system, user, 1024, {
+      onWait: function (sec) { s.el.className = 'zh pending'; s.el.textContent = '服務忙碌，' + Math.round(sec) + ' 秒後自動重試…'; }
+    }).then(function (zh) { setZh(s, zh || '（沒有譯文）'); })
       .catch(function (e) { setZh(s, '翻譯失敗：' + e.message, true); });
   }
   function setInterim(text) {
@@ -529,7 +594,10 @@ footer a{color:var(--green)}
       '只整理別人說過的內容，不要編造、不要建議與會者該說什麼。人名與術語參考講稿。\n\n講稿參考：\n' + scriptContext();
     var text = lines.join('\n');
     if (text.length > 60000) text = text.slice(-60000);
-    callModel(system, '會議逐字稿：\n' + text, 2048)
+    callModel(system, '會議逐字稿：\n' + text, 2048, {
+      priority: true,
+      onWait: function (sec) { box.textContent = '服務忙碌，' + Math.round(sec) + ' 秒後自動重試…'; }
+    })
       .then(function (r) { box.textContent = r || '（沒有內容）'; })
       .catch(function (e) { box.textContent = '摘要失敗：' + e.message; });
   });
@@ -576,7 +644,10 @@ footer a{color:var(--green)}
       'use the names and terms from the script and the recent conversation; output only the sentences to read, nothing else.\n\n' +
       'Script and notes:\n' + scriptContext();
     var user = (recent ? 'Recent conversation (for context):\n' + recent + '\n\n' : '') + 'What I want to say (Chinese):\n' + text;
-    callModel(system, user, 1024).then(function (r) {
+    callModel(system, user, 1024, {
+      priority: true,
+      onWait: function (sec) { out.textContent = '服務忙碌，' + Math.round(sec) + ' 秒後自動重試…'; }
+    }).then(function (r) {
       out.className = 'reply-out';
       out.textContent = r || '（沒有結果）';
       replyHistory.unshift({ q: text, a: r });
